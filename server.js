@@ -1,74 +1,813 @@
-const http=require("http"),fs=require("fs"),path=require("path"),{URL}=require("url");
-const ROOT=__dirname,PUBLIC=ROOT,DATA=path.join(ROOT,"data.json");
-const PORT=process.env.PORT||3000, ADMIN_TOKEN=process.env.ADMIN_TOKEN||"CHANGE_ME";
-const DG_KEY=process.env.DGIS_KEY||"";
-const DEFAULT={
- nextOrderId:1001,
- pickupPoints:[
-  {address:"Абылай Хана 24",radius:1500},
-  {address:"Абылай Хана 34",radius:1500},
-  {address:"Жибек Жолы 106",radius:1500},
-  {address:"Яссауи 66а",radius:1500},
-  {address:"Абай 47",radius:1500}
- ],
- orders:[]
-};
-if(!fs.existsSync(DATA))fs.writeFileSync(DATA,JSON.stringify(DEFAULT,null,2));
-const read=()=>JSON.parse(fs.readFileSync(DATA,"utf8")),save=d=>fs.writeFileSync(DATA,JSON.stringify(d,null,2));
-const json=(res,c,x)=>{res.writeHead(c,{"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type,Authorization"});res.end(JSON.stringify(x))};
-const getBody=req=>new Promise((ok,no)=>{let s="";req.on("data",c=>s+=c);req.on("end",()=>{try{ok(s?JSON.parse(s):{})}catch(e){no(e)}})});
-const auth=req=>req.headers.authorization===`Bearer ${ADMIN_TOKEN}`;
-function dist(a,b){const R=6371000,p=Math.PI/180,dLat=(b.lat-a.lat)*p,dLon=(b.lon-a.lon)*p;
- const x=Math.sin(dLat/2)**2+Math.cos(a.lat*p)*Math.cos(b.lat*p)*Math.sin(dLon/2)**2;
- return 2*R*Math.asin(Math.sqrt(x));
-}
-async function geocode(q){
- if(!DG_KEY) throw Error("DGIS_KEY is not configured");
- const u="https://catalog.api.2gis.com/3.0/items/geocode?"+new URLSearchParams({
-  q:q+", Алматы, Казахстан",fields:"items.point,items.full_address_name",page_size:"1",key:DG_KEY
- });
- const r=await fetch(u); if(!r.ok)throw Error("Geocoder error");
- const j=await r.json(),it=j?.result?.items?.[0];
- if(!it?.point) return null;
- return {lat:Number(it.point.lat),lon:Number(it.point.lon),address:it.full_address_name||q};
-}
-async function checkZone(address,d){
- const dest=await geocode(address);
- if(!dest)return {found:false,free:false,message:"Не удалось найти этот адрес на карте. Уточните адрес."};
- let best=null;
- for(const p of d.pickupPoints){
-  const origin=await geocode(p.address);
-  if(!origin)continue;
-  const meters=dist(origin,dest);
-  if(!best||meters<best.distance)best={pickup:p.address,distance:Math.round(meters),radius:p.radius};
- }
- if(!best)return {found:true,free:false,message:"Не удалось определить зону доставки."};
- const free=best.distance<=best.radius;
- return {found:true,free,distance:best.distance,radius:best.radius,pickup:best.pickup,coordinates:dest,
-  message:free?"Ваш адрес входит в бесплатную зону доставки. Стоимость: 0 ₸.":"Ваш адрес не входит в бесплатную зону доставки."};
-}
-const server=http.createServer(async(req,res)=>{
- const u=new URL(req.url,`http://${req.headers.host}`),m=req.method;
- if(m==="OPTIONS"){res.writeHead(204,{"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type,Authorization"});return res.end()}
- try{
-  if(u.pathname==="/api/config"&&m==="GET"){const d=read();return json(res,200,{pickupPoints:d.pickupPoints.map(x=>x.address)})}
-  if(u.pathname==="/api/check-zone"&&m==="POST"){const b=await getBody(req),d=read();return json(res,200,await checkZone(b.address,d))}
-  if(u.pathname==="/api/orders"&&m==="POST"){
-   const b=await getBody(req),d=read();
-   if(!b.name||!b.phone||!b.pickup||!b.address)return json(res,400,{error:"Заполните обязательные поля"});
-   if(!d.pickupPoints.some(x=>x.address===b.pickup))return json(res,400,{error:"Недопустимая точка отправления"});
-   const z=await checkZone(b.address,d);
-   if(!z.found)return json(res,400,{error:z.message});
-   const o={id:d.nextOrderId++,createdAt:new Date().toISOString(),name:b.name,phone:b.phone,pickup:b.pickup,address:b.address,item:b.item||"",comment:b.comment||"",free:z.free,distance:z.distance,radius:z.radius,deliveryPrice:z.free?0:null,status:"Новый"};
-   d.orders.unshift(o);save(d);return json(res,201,o);
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const { URL } = require("url");
+
+const ROOT = __dirname;
+const PUBLIC = ROOT;
+const DATA = path.join(ROOT, "data.json");
+
+const PORT = process.env.PORT || 3000;
+const ADMIN_TOKEN =
+  process.env.ADMIN_TOKEN || "CHANGE_ME";
+
+const DG_KEY = process.env.DGIS_KEY || "";
+
+/*
+  TOMCHI DELIVERY RULES
+
+  1. Адрес внутри зоны + заказ от 5000 ₸
+     = доставка 0 ₸
+
+  2. Адрес внутри зоны + заказ меньше 5000 ₸
+     = доставка 500 ₸
+
+  3. Адрес вне зоны
+     = клиент самостоятельно вызывает курьера
+       через Яндекс Go / inDrive.
+*/
+
+/*
+  ВАЖНО:
+  Координаты ниже — это настройки квадратов.
+
+  Если после тестирования нужно увеличить,
+  уменьшить или сдвинуть квадрат,
+  меняются только эти значения.
+*/
+
+const DELIVERY_ZONES = [
+
+  {
+    id: "zone1",
+    name: "Зона 1",
+
+    /*
+      Алматы-2 / Сейфуллина / Сатпаева / Абая
+
+      Сейчас задаём прямоугольную область.
+    */
+    minLat: 43.2250,
+    maxLat: 43.2550,
+    minLon: 76.8750,
+    maxLon: 76.9250
+  },
+
+  {
+    id: "zone2",
+    name: "Зона 2",
+
+    /*
+      Ташкентская / Каргалинская /
+      Б. Момышулы / пр. Абая
+    */
+    minLat: 43.2050,
+    maxLat: 43.2450,
+    minLon: 76.7600,
+    maxLon: 76.8500
   }
-  if(u.pathname==="/api/orders"&&m==="GET"){if(!auth(req))return json(res,401,{error:"Нет доступа"});return json(res,200,read().orders)}
-  if(u.pathname.startsWith("/api/orders/")&&m==="PATCH"){if(!auth(req))return json(res,401,{error:"Нет доступа"});const id=+u.pathname.split("/").pop(),b=await getBody(req),d=read(),o=d.orders.find(x=>x.id===id);if(!o)return json(res,404,{error:"Не найдено"});if(b.status)o.status=b.status;if("deliveryPrice"in b)o.deliveryPrice=b.deliveryPrice;save(d);return json(res,200,o)}
-  if(u.pathname==="/api/zone-settings"&&m==="GET"){if(!auth(req))return json(res,401,{error:"Нет доступа"});return json(res,200,read().pickupPoints)}
-  if(u.pathname==="/api/zone-settings"&&m==="PUT"){if(!auth(req))return json(res,401,{error:"Нет доступа"});const b=await getBody(req),d=read();if(!Array.isArray(b.pickupPoints))return json(res,400,{error:"Неверные данные"});d.pickupPoints=b.pickupPoints.map(x=>({address:String(x.address),radius:Math.max(0,Number(x.radius)||0)}));save(d);return json(res,200,d.pickupPoints)}
-  let file=u.pathname==="/"?"/index.html":u.pathname;if(file==="/admin")file="/admin.html";
-  const full=path.normalize(path.join(PUBLIC,file));if(!full.startsWith(PUBLIC))return json(res,403,{error:"Forbidden"});
-  fs.readFile(full,(e,data)=>{if(e){res.writeHead(404);return res.end("Not found")}const ext=path.extname(full),types={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8"};res.writeHead(200,{"Content-Type":types[ext]||"text/plain; charset=utf-8"});res.end(data)})
- }catch(e){json(res,500,{error:e.message})}
-});
-server.listen(PORT,()=>console.log(`Jet Delivery: http://localhost:${PORT}`));
+
+];
+
+const DEFAULT = {
+
+  nextOrderId: 1001,
+
+  pickupPoints: [
+    {
+      address: "Алматы-2",
+      radius: 0
+    },
+    {
+      address: "Ташкентская",
+      radius: 0
+    }
+  ],
+
+  orders: []
+};
+
+if (!fs.existsSync(DATA)) {
+  fs.writeFileSync(
+    DATA,
+    JSON.stringify(DEFAULT, null, 2)
+  );
+}
+
+const read = () =>
+  JSON.parse(
+    fs.readFileSync(DATA, "utf8")
+  );
+
+const save = d =>
+  fs.writeFileSync(
+    DATA,
+    JSON.stringify(d, null, 2)
+  );
+
+const json = (res, code, data) => {
+
+  res.writeHead(code, {
+
+    "Content-Type":
+      "application/json; charset=utf-8",
+
+    "Access-Control-Allow-Origin": "*",
+
+    "Access-Control-Allow-Headers":
+      "Content-Type,Authorization"
+
+  });
+
+  res.end(JSON.stringify(data));
+};
+
+const getBody = req =>
+  new Promise((resolve, reject) => {
+
+    let body = "";
+
+    req.on("data", chunk => {
+      body += chunk;
+    });
+
+    req.on("end", () => {
+
+      try {
+
+        resolve(
+          body
+            ? JSON.parse(body)
+            : {}
+        );
+
+      } catch (e) {
+
+        reject(e);
+
+      }
+
+    });
+
+  });
+
+const auth = req =>
+  req.headers.authorization ===
+  `Bearer ${ADMIN_TOKEN}`;
+
+
+/*
+  2GIS GEOCODING
+*/
+
+async function geocode(q) {
+
+  if (!DG_KEY) {
+    throw Error(
+      "DGIS_KEY is not configured"
+    );
+  }
+
+  const url =
+    "https://catalog.api.2gis.com/3.0/items/geocode?" +
+    new URLSearchParams({
+
+      q: q + ", Алматы, Казахстан",
+
+      fields:
+        "items.point,items.full_address_name",
+
+      page_size: "1",
+
+      key: DG_KEY
+    });
+
+  const response =
+    await fetch(url);
+
+  if (!response.ok) {
+    throw Error("Geocoder error");
+  }
+
+  const data =
+    await response.json();
+
+  const item =
+    data?.result?.items?.[0];
+
+  if (!item?.point) {
+    return null;
+  }
+
+  return {
+
+    lat: Number(item.point.lat),
+
+    lon: Number(item.point.lon),
+
+    address:
+      item.full_address_name || q
+  };
+}
+
+
+/*
+  Проверка попадания точки
+  в квадрат.
+*/
+
+function pointInsideZone(point, zone) {
+
+  return (
+
+    point.lat >= zone.minLat &&
+
+    point.lat <= zone.maxLat &&
+
+    point.lon >= zone.minLon &&
+
+    point.lon <= zone.maxLon
+
+  );
+}
+
+
+/*
+  Проверка адреса доставки.
+*/
+
+async function checkZone(address) {
+
+  const destination =
+    await geocode(address);
+
+  if (!destination) {
+
+    return {
+
+      found: false,
+
+      inZone: false,
+
+      message:
+        "Не удалось найти этот адрес на карте. Уточните адрес."
+    };
+  }
+
+  let matchedZone = null;
+
+  for (const zone of DELIVERY_ZONES) {
+
+    if (
+      pointInsideZone(
+        destination,
+        zone
+      )
+    ) {
+
+      matchedZone = zone;
+
+      break;
+    }
+  }
+
+  return {
+
+    found: true,
+
+    inZone: Boolean(matchedZone),
+
+    zone:
+      matchedZone?.name || null,
+
+    coordinates: destination,
+
+    message: matchedZone
+
+      ? `Адрес входит в ${matchedZone.name}.`
+
+      : "Адрес находится вне бесплатной зоны."
+  };
+}
+
+
+/*
+  HTTP SERVER
+*/
+
+const server =
+  http.createServer(
+    async (req, res) => {
+
+      const url =
+        new URL(
+          req.url,
+          `http://${req.headers.host}`
+        );
+
+      const method = req.method;
+
+      if (method === "OPTIONS") {
+
+        res.writeHead(204, {
+
+          "Access-Control-Allow-Origin":
+            "*",
+
+          "Access-Control-Allow-Headers":
+            "Content-Type,Authorization"
+
+        });
+
+        return res.end();
+      }
+
+      try {
+
+        /*
+          CONFIG
+        */
+
+        if (
+          url.pathname ===
+            "/api/config" &&
+          method === "GET"
+        ) {
+
+          const data = read();
+
+          return json(
+            res,
+            200,
+            {
+
+              pickupPoints:
+                data.pickupPoints
+                  .map(x => x.address),
+
+              zones:
+                DELIVERY_ZONES
+                  .map(z => z.name)
+
+            }
+          );
+        }
+
+
+        /*
+          CHECK ZONE
+        */
+
+        if (
+          url.pathname ===
+            "/api/check-zone" &&
+          method === "POST"
+        ) {
+
+          const body =
+            await getBody(req);
+
+          return json(
+            res,
+            200,
+            await checkZone(
+              body.address
+            )
+          );
+        }
+
+
+        /*
+          CREATE ORDER
+        */
+
+        if (
+          url.pathname ===
+            "/api/orders" &&
+          method === "POST"
+        ) {
+
+          const body =
+            await getBody(req);
+
+          const data = read();
+
+          if (
+            !body.name ||
+            !body.phone ||
+            !body.pickup ||
+            !body.address
+          ) {
+
+            return json(
+              res,
+              400,
+              {
+                error:
+                  "Заполните обязательные поля."
+              }
+            );
+          }
+
+
+          const amount =
+            Number(body.amount || 0);
+
+          if (
+            !Number.isFinite(amount) ||
+            amount <= 0
+          ) {
+
+            return json(
+              res,
+              400,
+              {
+                error:
+                  "Укажите корректную сумму заказа."
+              }
+            );
+          }
+
+
+          if (
+            !data.pickupPoints.some(
+              x =>
+                x.address === body.pickup
+            )
+          ) {
+
+            return json(
+              res,
+              400,
+              {
+                error:
+                  "Недопустимая точка отправления."
+              }
+            );
+          }
+
+
+          const zone =
+            await checkZone(
+              body.address
+            );
+
+
+          if (!zone.found) {
+
+            return json(
+              res,
+              400,
+              {
+                error:
+                  zone.message
+              }
+            );
+          }
+
+
+          let deliveryPrice = null;
+          let total = amount;
+
+
+          /*
+            ВНУТРИ ЗОНЫ
+          */
+
+          if (zone.inZone) {
+
+            if (amount < 5000) {
+
+              deliveryPrice = 500;
+
+            } else {
+
+              deliveryPrice = 0;
+            }
+
+            total =
+              amount +
+              deliveryPrice;
+
+          }
+
+
+          /*
+            ВНЕ ЗОНЫ
+            deliveryPrice = null,
+            потому что стоимость
+            стороннего курьера
+            определяет сам сервис.
+          */
+
+
+          const order = {
+
+            id:
+              data.nextOrderId++,
+
+            createdAt:
+              new Date().toISOString(),
+
+            name:
+              String(body.name),
+
+            phone:
+              String(body.phone),
+
+            pickup:
+              String(body.pickup),
+
+            address:
+              String(body.address),
+
+            amount,
+
+            item:
+              String(body.item || ""),
+
+            comment:
+              String(body.comment || ""),
+
+            inZone:
+              zone.inZone,
+
+            zone:
+              zone.zone || null,
+
+            deliveryPrice,
+
+            total:
+
+              zone.inZone
+                ? total
+                : null,
+
+            coordinates:
+              zone.coordinates,
+
+            status:
+              "Новый"
+          };
+
+
+          data.orders.unshift(order);
+
+          save(data);
+
+
+          return json(
+            res,
+            201,
+            order
+          );
+        }
+
+
+        /*
+          ADMIN: GET ORDERS
+        */
+
+        if (
+          url.pathname ===
+            "/api/orders" &&
+          method === "GET"
+        ) {
+
+          if (!auth(req)) {
+
+            return json(
+              res,
+              401,
+              {
+                error:
+                  "Нет доступа"
+              }
+            );
+          }
+
+          return json(
+            res,
+            200,
+            read().orders
+          );
+        }
+
+
+        /*
+          ADMIN: CHANGE ORDER
+        */
+
+        if (
+          url.pathname.startsWith(
+            "/api/orders/"
+          ) &&
+          method === "PATCH"
+        ) {
+
+          if (!auth(req)) {
+
+            return json(
+              res,
+              401,
+              {
+                error:
+                  "Нет доступа"
+              }
+            );
+          }
+
+          const id =
+            Number(
+              url.pathname
+                .split("/")
+                .pop()
+            );
+
+          const body =
+            await getBody(req);
+
+          const data = read();
+
+          const order =
+            data.orders.find(
+              x => x.id === id
+            );
+
+          if (!order) {
+
+            return json(
+              res,
+              404,
+              {
+                error:
+                  "Заказ не найден"
+              }
+            );
+          }
+
+          if (
+            body.status
+          ) {
+
+            order.status =
+              body.status;
+          }
+
+          if (
+            "deliveryPrice" in body
+          ) {
+
+            order.deliveryPrice =
+              body.deliveryPrice;
+          }
+
+          save(data);
+
+          return json(
+            res,
+            200,
+            order
+          );
+        }
+
+
+        /*
+          ADMIN: ZONE SETTINGS
+        */
+
+        if (
+          url.pathname ===
+            "/api/zone-settings" &&
+          method === "GET"
+        ) {
+
+          if (!auth(req)) {
+
+            return json(
+              res,
+              401,
+              {
+                error:
+                  "Нет доступа"
+              }
+            );
+          }
+
+          return json(
+            res,
+            200,
+            DELIVERY_ZONES
+          );
+        }
+
+
+        /*
+          STATIC FILES
+        */
+
+        let file =
+          url.pathname === "/"
+            ? "/index.html"
+            : url.pathname;
+
+        if (file === "/admin") {
+          file = "/admin.html";
+        }
+
+        const full =
+          path.normalize(
+            path.join(
+              PUBLIC,
+              file
+            )
+          );
+
+        if (
+          !full.startsWith(PUBLIC)
+        ) {
+
+          return json(
+            res,
+            403,
+            {
+              error:
+                "Forbidden"
+            }
+          );
+        }
+
+
+        fs.readFile(
+          full,
+          (error, content) => {
+
+            if (error) {
+
+              res.writeHead(404);
+
+              return res.end(
+                "Not found"
+              );
+            }
+
+            const ext =
+              path.extname(full);
+
+            const types = {
+
+              ".html":
+                "text/html; charset=utf-8",
+
+              ".js":
+                "text/javascript; charset=utf-8",
+
+              ".css":
+                "text/css; charset=utf-8",
+
+              ".json":
+                "application/json; charset=utf-8"
+
+            };
+
+            res.writeHead(
+              200,
+              {
+                "Content-Type":
+                  types[ext] ||
+                  "text/plain; charset=utf-8"
+              }
+            );
+
+            res.end(content);
+          }
+        );
+
+      } catch (error) {
+
+        console.error(error);
+
+        json(
+          res,
+          500,
+          {
+            error:
+              error.message
+          }
+        );
+      }
+
+    }
+  );
+
+
+server.listen(
+  PORT,
+  () => {
+
+    console.log(
+      `Tomchi: http://localhost:${PORT}`
+    );
+
+  }
+);
