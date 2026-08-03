@@ -1,712 +1,957 @@
 <!doctype html>
 <html lang="ru">
+
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101010">
-  <title>Tomchi — доставка по Алматы</title>
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  >
+<meta charset="utf-8">
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1"
+>
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f5f6f8;
-      color: #111;
-    }
+<title>TOMCHI DELIVERY</title>
 
-    header {
-      background: #101010;
-      color: white;
-      padding: 16px 6%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
 
-    .logo {
-      font-size: 24px;
-      font-weight: 900;
-    }
+<style>
 
-    .logo b {
-      color: #9cff00;
-    }
+* {
+  box-sizing: border-box;
+}
 
-    nav a {
-      color: white;
-      text-decoration: none;
-      margin-left: 20px;
-    }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f6f8;
+  color: #111;
+}
 
-    .hero {
-      background: #101010;
-      color: white;
-      padding: 55px 6%;
-    }
+header {
+  background: #101010;
+  color: white;
+  padding: 18px 6%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
-    .hero-inner {
-      max-width: 1100px;
-      margin: auto;
-    }
+.logo {
+  font-size: 22px;
+  font-weight: 900;
+}
 
-    .hero h1 {
-      font-size: clamp(42px, 8vw, 72px);
-      line-height: .95;
-      margin: 0 0 20px;
-    }
+.logo b {
+  color: #9cff00;
+}
 
-    .hero p {
-      color: #bbb;
-      font-size: 18px;
-      max-width: 650px;
-      line-height: 1.5;
-    }
+header a {
+  color: white;
+  margin-left: 20px;
+  text-decoration: none;
+}
 
-    .wrap {
-      max-width: 900px;
-      margin: auto;
-      padding: 35px 5%;
-    }
+.hero {
+  background: #101010;
+  color: white;
+  padding: 55px 6%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
 
-    .card {
-      background: white;
-      border-radius: 22px;
-      padding: 24px;
-      box-shadow: 0 10px 35px #0000000b;
-    }
+.hero h1 {
+  font-size: clamp(42px, 6vw, 70px);
+  line-height: .95;
+  margin: 0 0 18px;
+}
 
-    h2 {
-      margin-top: 0;
-    }
+.hero p {
+  color: #bbb;
+  font-size: 18px;
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
+.wrap {
+  max-width: 1100px;
+  margin: auto;
+  padding: 45px 6%;
+}
 
-    label {
-      font-weight: 700;
-      font-size: 14px;
-    }
+.card {
+  background: white;
+  border-radius: 20px;
+  padding: 23px;
+  box-shadow: 0 10px 35px #0000000b;
+}
 
-    input,
-    select {
-      width: 100%;
-      margin-top: 7px;
-      padding: 15px;
-      border: 1px solid #ddd;
-      border-radius: 13px;
-      font: inherit;
-      outline: none;
-    }
+.btn {
+  background: #9cff00;
+  color: #111;
+  border: 0;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
 
-    input:focus,
-    select:focus {
-      border-color: #111;
-    }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+}
 
-    .full {
-      grid-column: 1 / -1;
-    }
+label {
+  font-weight: 700;
+  font-size: 13px;
+}
 
-    .btn {
-      width: 100%;
-      background: #9cff00;
-      color: #111;
-      border: 0;
-      padding: 16px 18px;
-      border-radius: 13px;
-      font-weight: 900;
-      font-size: 16px;
-      cursor: pointer;
-    }
+input,
+select {
+  width: 100%;
+  margin-top: 7px;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  font: inherit;
+}
 
-    .btn:active {
-      transform: scale(.99);
-    }
+.full {
+  grid-column: 1 / -1;
+}
 
-    .zone {
-      margin-top: 16px;
-      padding: 17px;
-      border-radius: 15px;
-      font-weight: 800;
-      line-height: 1.45;
-    }
+.zone {
+  margin-top: 15px;
+  padding: 16px;
+  border-radius: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
 
-    .free {
-      background: #eaffcf;
-      color: #315d00;
-    }
+.free {
+  background: #eaffcf;
+  color: #315d00;
+}
 
-    .paid {
-      background: #fff0cf;
-      color: #805000;
-    }
+.paid {
+  background: #fff0cf;
+  color: #805000;
+}
 
-    .bad {
-      background: #ffe0e0;
-      color: #850000;
-    }
+.bad {
+  background: #ffe0e0;
+  color: #850000;
+}
 
-    .outside {
-      background: #fff0cf;
-      color: #704400;
-    }
+.map {
+  height: 280px;
+  margin-top: 16px;
+  border-radius: 15px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
 
-    .delivery-buttons {
-      display: none;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 12px;
-    }
+.summary {
+  margin-top: 15px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #f4f4f4;
+}
 
-    .delivery-buttons a {
-      text-decoration: none;
-      text-align: center;
-      padding: 15px 10px;
-      border-radius: 13px;
-      font-weight: 900;
-      color: white;
-    }
+.summary div {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+}
 
-    .yandex {
-      background: #111;
-    }
+.total {
+  font-size: 20px;
+  font-weight: 900;
+  border-top: 1px solid #ddd;
+  margin-top: 8px;
+  padding-top: 12px !important;
+}
 
-    .indrive {
-      background: #ffb800;
-      color: #111 !important;
-    }
+.courier {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
 
-    .summary {
-      margin-top: 15px;
-      padding: 18px;
-      border-radius: 15px;
-      background: #f5f6f8;
-    }
+.courier button {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
 
-    .summary-row {
-      display: flex;
-      justify-content: space-between;
-      gap: 15px;
-      margin: 7px 0;
-    }
+.muted {
+  color: #777;
+  font-size: 13px;
+}
 
-    .summary-total {
-      border-top: 1px solid #ddd;
-      padding-top: 12px;
-      margin-top: 12px;
-      font-size: 20px;
-      font-weight: 900;
-    }
+@media(max-width:750px) {
 
-    .map {
-      height: 280px;
-      margin-top: 16px;
-      border-radius: 15px;
-      overflow: hidden;
-      border: 1px solid #ddd;
-    }
+  .hero,
+  .grid {
+    grid-template-columns: 1fr;
+  }
 
-    .muted {
-      color: #777;
-      font-size: 13px;
-      line-height: 1.5;
-    }
+  .full {
+    grid-column: auto;
+  }
 
-    #result {
-      margin-top: 12px;
-    }
+  nav {
+    display: none;
+  }
 
-    @media (max-width: 700px) {
-      header {
-        padding: 14px 5%;
-      }
+  .wrap {
+    padding: 30px 4%;
+  }
 
-      nav {
-        display: none;
-      }
+  .hero {
+    padding: 40px 4%;
+  }
 
-      .hero {
-        padding: 45px 5%;
-      }
+}
 
-      .hero h1 {
-        font-size: 48px;
-      }
+</style>
 
-      .wrap {
-        padding: 25px 4%;
-      }
-
-      .card {
-        padding: 18px;
-        border-radius: 18px;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .full {
-        grid-column: auto;
-      }
-
-      .delivery-buttons {
-        grid-template-columns: 1fr;
-      }
-
-      .map {
-        height: 240px;
-      }
-    }
-  </style>
 </head>
 
 <body>
 
 <header>
-  <div class="logo">TOMCHI<b>•</b></div>
+
+  <div class="logo">
+    TOMCHI<b>•</b>DELIVERY
+  </div>
 
   <nav>
     <a href="#order">Заказать</a>
     <a href="/admin">Админ</a>
   </nav>
+
 </header>
 
+
 <section class="hero">
-  <div class="hero-inner">
-    <h1>Доставка<br>по Алматы.</h1>
+
+  <div>
+
+    <h1>
+      Доставка<br>
+      по Алматы.
+    </h1>
 
     <p>
-      Введите адрес доставки. Система автоматически определит,
-      находится ли он в зоне бесплатной доставки.
+      Введите адрес и сумму заказа —
+      система автоматически определит
+      стоимость доставки.
     </p>
+
+    <a
+      class="btn"
+      href="#order"
+    >
+      Оформить заказ
+    </a>
+
   </div>
-</section>
 
-<main class="wrap" id="order">
-
-  <h2>Оформить заказ</h2>
 
   <div class="card">
 
-    <form id="form" class="grid">
+    <b>
+      Как работает доставка?
+    </b>
 
-      <label>
-        Имя
-        <input id="name" required placeholder="Ваше имя">
-      </label>
+    <p class="muted">
+      У нас есть 2 зоны доставки.
+      Внутри зоны заказ от 5000 ₸
+      доставляется бесплатно.
+      Если заказ меньше 5000 ₸ —
+      доставка стоит 500 ₸.
+    </p>
 
-      <label>
-        Телефон
-        <input
-          id="phone"
-          required
-          placeholder="+7 700 000 00 00"
-        >
-      </label>
+    <p class="muted">
+      Если адрес находится за пределами
+      зон, клиент самостоятельно вызывает
+      Яндекс Go или inDrive.
+    </p>
 
-      <label>
-        Откуда
-        <select id="pickup" required></select>
-      </label>
-
-      <label>
-        Адрес доставки
-        <input
-          id="address"
-          required
-          placeholder="Например: Алматы, Абылай хана 50"
-        >
-      </label>
-
-      <label>
-        Сумма заказа, ₸
-        <input
-          id="amount"
-          type="number"
-          min="0"
-          step="1"
-          required
-          placeholder="Например: 5000"
-        >
-      </label>
-
-      <label>
-        Что доставить
-        <input id="item" placeholder="Например: продукты">
-      </label>
-
-      <label class="full">
-        Комментарий
-        <input
-          id="comment"
-          placeholder="Подъезд, этаж, домофон и т.д."
-        >
-      </label>
-
-      <div class="full">
-
-        <div id="zone" class="zone paid">
-          Введите адрес доставки.
-        </div>
-
-        <div id="deliveryButtons" class="delivery-buttons">
-
-          <a
-            class="yandex"
-            href="https://go.yandex/"
-            target="_blank"
-            rel="noopener"
-          >
-            🚕 Яндекс Go
-          </a>
-
-          <a
-            class="indrive"
-            href="https://indrive.com/"
-            target="_blank"
-            rel="noopener"
-          >
-            🚕 inDrive
-          </a>
-
-        </div>
-
-        <div id="summary" class="summary" style="display:none">
-
-          <div class="summary-row">
-            <span>Заказ:</span>
-            <b id="orderPrice">0 ₸</b>
-          </div>
-
-          <div class="summary-row">
-            <span>Доставка:</span>
-            <b id="deliveryPrice">0 ₸</b>
-          </div>
-
-          <div class="summary-row summary-total">
-            <span>Итого:</span>
-            <b id="totalPrice">0 ₸</b>
-          </div>
-
-        </div>
-
-        <div id="map" class="map"></div>
-
-      </div>
-
-      <div class="full">
-        <button class="btn" type="submit">
-          Создать заказ
-        </button>
-
-        <div id="result"></div>
-      </div>
-
-    </form>
+    <b>
+      5 точек отправления
+    </b>
 
   </div>
 
-  <p class="muted">
-    Бесплатная доставка действует при заказе от 5000 ₸
-    внутри бесплатной зоны.
-  </p>
+</section>
+
+
+<main
+  class="wrap"
+  id="order"
+>
+
+<h2>
+  Оформить заказ
+</h2>
+
+
+<div class="card">
+
+<form
+  id="form"
+  class="grid"
+>
+
+
+<label>
+
+Имя
+
+<input
+  id="name"
+  required
+>
+
+</label>
+
+
+<label>
+
+Телефон
+
+<input
+  id="phone"
+  required
+  placeholder="+7 700 000 00 00"
+>
+
+</label>
+
+
+<label>
+
+Откуда
+
+<select
+  id="pickup"
+  required
+></select>
+
+</label>
+
+
+<label>
+
+Куда
+
+<input
+  id="address"
+  required
+  placeholder="Например: Алматы, Абылай хана 50"
+>
+
+</label>
+
+
+<label>
+
+Сумма заказа, ₸
+
+<input
+  id="amount"
+  type="number"
+  min="1"
+  step="1"
+  required
+  placeholder="Например: 5000"
+>
+
+</label>
+
+
+<div class="full">
+
+  <div
+    id="zone"
+    class="zone paid"
+  >
+    Введите адрес и сумму заказа.
+  </div>
+
+  <div
+    id="summary"
+    class="summary"
+    style="display:none"
+  ></div>
+
+  <div
+    id="courier"
+    class="zone bad"
+    style="display:none"
+  >
+
+    Адрес вне зоны доставки.
+
+    <br>
+
+    Клиент может самостоятельно
+    вызвать курьера через Яндекс Go
+    или inDrive.
+
+    <div class="courier">
+
+      <button
+        type="button"
+        onclick="openYandex()"
+      >
+        Яндекс Go
+      </button>
+
+      <button
+        type="button"
+        onclick="openIndrive()"
+      >
+        inDrive
+      </button>
+
+    </div>
+
+  </div>
+
+  <div
+    id="map"
+    class="map"
+  ></div>
+
+</div>
+
+
+<label>
+
+Что доставить
+
+<input id="item">
+
+</label>
+
+
+<label>
+
+Комментарий
+
+<input id="comment">
+
+</label>
+
+
+<div class="full">
+
+<button
+  class="btn"
+  type="submit"
+>
+
+Создать заказ
+
+</button>
+
+<div id="result"></div>
+
+</div>
+
+
+</form>
+
+</div>
 
 </main>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+></script>
+
 
 <script>
-  let timer;
-  let map;
-  let marker;
-  let lastZone = null;
 
-  const $ = id => document.getElementById(id);
+let timer;
+let map;
+let marker;
+let lastZone = null;
 
-  function money(value) {
-    return Number(value || 0).toLocaleString("ru-RU") + " ₸";
-  }
 
-  function updateSummary(zoneData) {
+const $ = id =>
+  document.getElementById(id);
 
-    const amount = Number($("amount").value || 0);
 
-    if (!amount) {
-      $("summary").style.display = "none";
-      return;
-    }
+// =====================================
+// КУРЬЕРЫ
+// =====================================
 
-    let delivery = 0;
+function openYandex() {
 
-    if (zoneData && zoneData.found) {
+  window.open(
+    "https://yandex.kz/maps/",
+    "_blank"
+  );
 
-      if (!zoneData.inZone) {
-        delivery = 0;
-      } else if (amount < 5000) {
-        delivery = 500;
-      } else {
-        delivery = 0;
-      }
+}
 
-    }
+function openIndrive() {
 
-    $("orderPrice").textContent = money(amount);
-    $("deliveryPrice").textContent =
-      zoneData && zoneData.inZone
-        ? money(delivery)
-        : "Оплачивается отдельно";
+  window.open(
+    "https://indrive.com/",
+    "_blank"
+  );
 
-    $("totalPrice").textContent =
-      zoneData && zoneData.inZone
-        ? money(amount + delivery)
-        : "—";
+}
 
-    $("summary").style.display = "block";
-  }
 
-  async function init() {
+// =====================================
+// INIT
+// =====================================
 
-    const r = await fetch("/api/config");
-    const c = await r.json();
+async function init() {
 
-    $("pickup").innerHTML = "";
+  const response =
+    await fetch("/api/config");
 
-    c.pickupPoints.forEach(x => {
-      $("pickup").add(new Option(x, x));
-    });
+  const config =
+    await response.json();
 
-    map = L
-      .map("map")
-      .setView([43.2389, 76.8897], 12);
 
-    L
-      .tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        {
-          attribution: "© OpenStreetMap"
-        }
-      )
-      .addTo(map);
-  }
+  config.pickupPoints.forEach(
+    address => {
 
-  async function check() {
-
-    const address = $("address").value.trim();
-    const zone = $("zone");
-
-    if (!address) {
-
-      zone.className = "zone paid";
-      zone.textContent = "Введите адрес доставки.";
-
-      $("deliveryButtons").style.display = "none";
-      $("summary").style.display = "none";
-
-      return null;
-    }
-
-    zone.className = "zone paid";
-    zone.textContent = "Проверяем адрес на карте…";
-
-    try {
-
-      const r = await fetch("/api/check-zone", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      $("pickup").add(
+        new Option(
+          address,
           address
-        })
-      });
-
-      const x = await r.json();
-
-      if (!x.found) {
-
-        zone.className = "zone bad";
-        zone.textContent = x.message;
-
-        $("deliveryButtons").style.display = "none";
-
-        return x;
-      }
-
-      lastZone = x;
-
-      if (x.inZone) {
-
-        zone.className =
-          "zone " + (x.deliveryPrice === 0 ? "free" : "paid");
-
-        zone.textContent = x.message;
-
-        $("deliveryButtons").style.display = "none";
-
-      } else {
-
-        zone.className = "zone outside";
-
-        zone.textContent =
-          "🔴 Адрес находится вне бесплатной зоны. " +
-          "Курьера нужно вызвать самостоятельно.";
-
-        $("deliveryButtons").style.display = "grid";
-      }
-
-      updateSummary(x);
-
-      if (marker) {
-        map.removeLayer(marker);
-      }
-
-      marker = L
-        .marker([
-          x.coordinates.lat,
-          x.coordinates.lon
-        ])
-        .addTo(map)
-        .bindPopup(
-          x.coordinates.address || address
         )
-        .openPopup();
-
-      map.setView(
-        [
-          x.coordinates.lat,
-          x.coordinates.lon
-        ],
-        15
       );
 
-      return x;
-
-    } catch (e) {
-
-      zone.className = "zone bad";
-      zone.textContent =
-        "Ошибка проверки адреса. Попробуйте ещё раз.";
-
-      return null;
     }
+  );
+
+
+  map =
+    L.map("map")
+      .setView(
+        [43.2389, 76.8897],
+        12
+      );
+
+
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      attribution:
+        "© OpenStreetMap"
+    }
+  ).addTo(map);
+
+}
+
+
+// =====================================
+// ПРОВЕРКА
+// =====================================
+
+async function check() {
+
+  const address =
+    $("address")
+      .value
+      .trim();
+
+  const amount =
+    Number(
+      $("amount").value
+    );
+
+
+  if (!address) {
+
+    $("zone").className =
+      "zone paid";
+
+    $("zone").textContent =
+      "Введите адрес доставки.";
+
+    $("summary").style.display =
+      "none";
+
+    $("courier").style.display =
+      "none";
+
+    return null;
+
   }
 
-  $("address").addEventListener("input", () => {
 
-    clearTimeout(timer);
+  if (
+    !amount ||
+    amount <= 0
+  ) {
 
-    timer = setTimeout(check, 600);
-  });
+    $("zone").className =
+      "zone paid";
 
-  $("amount").addEventListener("input", () => {
+    $("zone").textContent =
+      "Введите сумму заказа.";
 
-    if (lastZone) {
-      updateSummary(lastZone);
+    $("summary").style.display =
+      "none";
+
+    $("courier").style.display =
+      "none";
+
+    return null;
+
+  }
+
+
+  $("zone").className =
+    "zone paid";
+
+  $("zone").textContent =
+    "Проверяем адрес на карте…";
+
+
+  const response =
+    await fetch(
+      "/api/check-zone",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json"
+        },
+
+        body: JSON.stringify({
+          address,
+          amount
+        })
+      }
+    );
+
+
+  const data =
+    await response.json();
+
+
+  if (!data.found) {
+
+    $("zone").className =
+      "zone bad";
+
+    $("zone").textContent =
+      data.message;
+
+    $("summary").style.display =
+      "none";
+
+    $("courier").style.display =
+      "none";
+
+    return data;
+
+  }
+
+
+  lastZone = data;
+
+
+  // ===================================
+  // ВНЕ ЗОНЫ
+  // ===================================
+
+  if (!data.inZone) {
+
+    $("zone").className =
+      "zone bad";
+
+    $("zone").textContent =
+      data.message;
+
+    $("summary").style.display =
+      "none";
+
+    $("courier").style.display =
+      "block";
+
+  }
+
+
+  // ===================================
+  // В ЗОНЕ
+  // ===================================
+
+  else {
+
+    $("courier").style.display =
+      "none";
+
+    $("zone").className =
+      data.deliveryPrice === 0
+        ? "zone free"
+        : "zone paid";
+
+    $("zone").textContent =
+      data.message;
+
+
+    $("summary").style.display =
+      "block";
+
+
+    $("summary").innerHTML = `
+
+      <div>
+        <span>Заказ:</span>
+        <b>${amount.toLocaleString("ru-RU")} ₸</b>
+      </div>
+
+      <div>
+        <span>Доставка:</span>
+        <b>
+          ${
+            data.deliveryPrice === 0
+              ? "Бесплатно"
+              : "500 ₸"
+          }
+        </b>
+      </div>
+
+      <div class="total">
+        <span>Итого:</span>
+        <b>
+          ${data.total.toLocaleString("ru-RU")} ₸
+        </b>
+      </div>
+
+    `;
+
+  }
+
+
+  // ===================================
+  // MAP
+  // ===================================
+
+  if (marker) {
+
+    map.removeLayer(marker);
+
+  }
+
+
+  marker =
+    L.marker([
+      data.coordinates.lat,
+      data.coordinates.lon
+    ])
+    .addTo(map)
+    .bindPopup(
+      data.coordinates.address ||
+      address
+    )
+    .openPopup();
+
+
+  map.setView(
+    [
+      data.coordinates.lat,
+      data.coordinates.lon
+    ],
+    15
+  );
+
+
+  return data;
+
+}
+
+
+// =====================================
+// ADDRESS INPUT
+// =====================================
+
+$("address")
+  .addEventListener(
+    "input",
+    () => {
+
+      clearTimeout(timer);
+
+      timer =
+        setTimeout(
+          check,
+          600
+        );
+
     }
-  });
+  );
 
-  $("form").addEventListener("submit", async e => {
 
-    e.preventDefault();
+// =====================================
+// AMOUNT INPUT
+// =====================================
 
-    const z = await check();
+$("amount")
+  .addEventListener(
+    "input",
+    () => {
 
-    if (!z || !z.found) {
-      return;
+      clearTimeout(timer);
+
+      timer =
+        setTimeout(
+          check,
+          300
+        );
+
     }
+  );
 
-    const amount = Number($("amount").value || 0);
 
-    if (amount <= 0) {
+// =====================================
+// CREATE ORDER
+// =====================================
 
-      $("result").innerHTML =
-        '<div class="zone bad">' +
-        "Укажите сумму заказа." +
-        "</div>";
+$("form")
+  .addEventListener(
+    "submit",
+    async event => {
 
-      return;
+      event.preventDefault();
+
+
+      const zone =
+        await check();
+
+
+      if (
+        !zone ||
+        !zone.found
+      ) {
+        return;
+      }
+
+
+      const response =
+        await fetch(
+          "/api/orders",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body: JSON.stringify({
+
+              name:
+                $("name").value,
+
+              phone:
+                $("phone").value,
+
+              pickup:
+                $("pickup").value,
+
+              address:
+                $("address").value,
+
+              amount:
+                Number(
+                  $("amount").value
+                ),
+
+              item:
+                $("item").value,
+
+              comment:
+                $("comment").value
+
+            })
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (!response.ok) {
+
+        $("result").innerHTML = `
+
+          <div class="zone bad">
+
+            ${data.error || "Ошибка"}
+
+          </div>
+
+        `;
+
+        return;
+
+      }
+
+
+      $("result").innerHTML = `
+
+        <div class="zone free">
+
+          Заказ №${data.id} создан.
+
+          <br>
+
+          Доставка:
+          ${
+            data.deliveryPrice === 0
+              ? "бесплатно — 0 ₸"
+              : data.deliveryPrice === 500
+                ? "500 ₸"
+                : "через Яндекс Go / inDrive"
+          }
+
+          ${
+            data.total
+              ? `<br>Итого:
+                 ${data.total.toLocaleString("ru-RU")} ₸`
+              : ""
+          }
+
+        </div>
+
+      `;
+
+
+      event.target.reset();
+
+      $("summary").style.display =
+        "none";
+
     }
+  );
 
-    const r = await fetch("/api/orders", {
 
-      method: "POST",
+init();
 
-      headers: {
-        "Content-Type": "application/json"
-      },
-
-      body: JSON.stringify({
-
-        name: $("name").value,
-
-        phone: $("phone").value,
-
-        pickup: $("pickup").value,
-
-        address: $("address").value,
-
-        amount,
-
-        item: $("item").value,
-
-        comment: $("comment").value
-      })
-    });
-
-    const x = await r.json();
-
-    if (!r.ok) {
-
-      $("result").innerHTML =
-        '<div class="zone bad">' +
-        (x.error || "Ошибка создания заказа.") +
-        "</div>";
-
-      return;
-    }
-
-    $("result").innerHTML =
-      '<div class="zone free">' +
-      "✅ Заказ #" + x.id + " создан.<br>" +
-      "Сумма заказа: " + money(x.amount) + "<br>" +
-      "Доставка: " +
-      (
-        x.inZone
-          ? money(x.deliveryPrice)
-          : "курьер оплачивается отдельно"
-      ) +
-      "<br>" +
-      "Итого: " +
-      (
-        x.inZone
-          ? money(x.total)
-          : "без стоимости стороннего курьера"
-      ) +
-      "</div>";
-
-    e.target.reset();
-
-    lastZone = null;
-  });
-
-  init();
 </script>
 
 </body>
+
 </html>
