@@ -423,10 +423,7 @@ const server =
           const amount =
             Number(body.amount || 0);
 
-          if (
-            !Number.isFinite(amount) ||
-            amount <= 0
-          ) {
+           {
             return json(res, 400, {
               error:
                 "Введите сумму заказа."
