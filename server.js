@@ -20,19 +20,98 @@ const SMALL_ORDER_DELIVERY = 500;
 // =====================================================
 // 5 ТОЧЕК ОТПРАВЛЕНИЯ — НЕ УДАЛЯЕМ
 // =====================================================
-
 const DEFAULT = {
   nextOrderId: 1001,
 
   pickupPoints: [
-    { address: "Абылай Хана 24", radius: 1500 },
-    { address: "Абылай Хана 34", radius: 1500 },
-    { address: "Жибек Жолы 106", radius: 1500 },
-    { address: "Яссауи 66а", radius: 1500 },
-    { address: "Абай 47", radius: 1500 }
+
+    {
+      id:1,
+      name:"Абылай Хана 24",
+      address:"Абылай Хана 24",
+
+      lat:43.2636,
+      lon:76.9399,
+
+      workTime:"24/7",
+
+      deliveryTime:"11:00-23:00",
+
+      kaspi:"",
+      whatsapp:""
+    },
+
+    {
+      id:2,
+      name:"Tomchi Premium",
+
+      address:"Абылай Хана 34",
+
+      lat:43.2641,
+      lon:76.9406,
+
+      workTime:"10:00-02:00",
+
+      deliveryTime:"11:00-23:00",
+
+      kaspi:"",
+      whatsapp:""
+    },
+
+    {
+      id:3,
+      name:"Арбат",
+
+      address:"Жибек Жолы 106",
+
+      lat:43.2624,
+      lon:76.9447,
+
+      workTime:"10:00-02:00",
+
+      deliveryTime:"11:00-23:00",
+
+      kaspi:"",
+      whatsapp:""
+    },
+
+    {
+      id:4,
+      name:"Абая 47",
+
+      address:"Абая 47",
+
+      lat:43.2410,
+      lon:76.9126,
+
+      workTime:"10:00-02:00",
+
+      deliveryTime:"11:00-23:00",
+
+      kaspi:"",
+      whatsapp:""
+    },
+
+    {
+      id:5,
+      name:"Яссауи",
+
+      address:"Яссауи 66А",
+
+      lat:43.2210,
+      lon:76.7950,
+
+      workTime:"10:00-02:00",
+
+      deliveryTime:"11:00-23:00",
+
+      kaspi:"",
+      whatsapp:""
+    }
+
   ],
 
-  orders: []
+  orders:[]
 };
 
 // =====================================================
