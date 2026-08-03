@@ -10,7 +10,58 @@ const DATA = path.join(ROOT, "data.json");
 const PORT = process.env.PORT || 3000;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "CHANGE_ME";
 const DG_KEY = process.env.DGIS_KEY || "";
+// ===============================
+// TOMCHI — 2 ЗОНЫ ДОСТАВКИ
+// ===============================
 
+const FREE_DELIVERY_MINIMUM = 5000;
+const SMALL_ORDER_DELIVERY = 500;
+
+// Зона №1
+const DELIVERY_ZONE_1 = {
+  name: "Зона 1",
+
+  // Алматы-2 / Сейфуллина / Сатпаева / Абая
+  minLat: 43.2250,
+  maxLat: 43.2550,
+  minLon: 76.8750,
+  maxLon: 76.9250
+};
+
+// Зона №2
+const DELIVERY_ZONE_2 = {
+  name: "Зона 2",
+
+  // Ташкентская / Каргалинская / Б. Момышулы / Абая
+  minLat: 43.2050,
+  maxLat: 43.2450,
+  minLon: 76.7600,
+  maxLon: 76.8500
+};
+
+const DELIVERY_ZONES = [
+  DELIVERY_ZONE_1,
+  DELIVERY_ZONE_2
+];
+
+function isInsideZone(point, zone) {
+  return (
+    point.lat >= zone.minLat &&
+    point.lat <= zone.maxLat &&
+    point.lon >= zone.minLon &&
+    point.lon <= zone.maxLon
+  );
+}
+
+function findDeliveryZone(point) {
+  for (const zone of DELIVERY_ZONES) {
+    if (isInsideZone(point, zone)) {
+      return zone;
+    }
+  }
+
+  return null;
+}
 /*
 ====================================================
  TOMCHI — НАСТРОЙКИ ДОСТАВКИ
