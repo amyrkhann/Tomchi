@@ -1,5 +1,5 @@
 const http=require("http"),fs=require("fs"),path=require("path"),{URL}=require("url");
-const ROOT=__dirname,PUBLIC=path.join(ROOT,"public"),DATA=path.join(ROOT,"data.json");
+const ROOT=__dirname,PUBLIC=ROOT,DATA=path.join(ROOT,"data.json");
 const PORT=process.env.PORT||3000, ADMIN_TOKEN=process.env.ADMIN_TOKEN||"CHANGE_ME";
 const DG_KEY=process.env.DGIS_KEY||"";
 const DEFAULT={
