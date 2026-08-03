@@ -4,716 +4,398 @@ const path = require("path");
 const { URL } = require("url");
 
 const ROOT = __dirname;
-const PUBLIC = ROOT;
 const DATA = path.join(ROOT, "data.json");
 
 const PORT = process.env.PORT || 3000;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "CHANGE_ME";
 const DG_KEY = process.env.DGIS_KEY || "";
-// ===============================
-// TOMCHI — 2 ЗОНЫ ДОСТАВКИ
-// ===============================
+
+// =====================================================
+// TOMCHI — ДОСТАВКА
+// =====================================================
 
 const FREE_DELIVERY_MINIMUM = 5000;
 const SMALL_ORDER_DELIVERY = 500;
 
-// Зона №1
-const DELIVERY_ZONE_1 = {
-  name: "Зона 1",
+// =====================================================
+// 5 ТОЧЕК ОТПРАВЛЕНИЯ — НЕ УДАЛЯЕМ
+// =====================================================
 
-  // Алматы-2 / Сейфуллина / Сатпаева / Абая
-  minLat: 43.2250,
-  maxLat: 43.2550,
-  minLon: 76.8750,
-  maxLon: 76.9250
+const DEFAULT = {
+  nextOrderId: 1001,
+
+  pickupPoints: [
+    { address: "Абылай Хана 24", radius: 1500 },
+    { address: "Абылай Хана 34", radius: 1500 },
+    { address: "Жибек Жолы 106", radius: 1500 },
+    { address: "Яссауи 66а", radius: 1500 },
+    { address: "Абай 47", radius: 1500 }
+  ],
+
+  orders: []
 };
 
-// Зона №2
-const DELIVERY_ZONE_2 = {
+// =====================================================
+// 2 КВАДРАТНЫЕ ЗОНЫ
+// =====================================================
+
+// ЗОНА 1
+// Алматы-2 / Сейфуллина / Сатпаева / Абая
+
+const ZONE_1 = {
+  id: "zone1",
+  name: "Зона 1",
+
+  minLat: 43.2380,
+  maxLat: 43.2750,
+
+  minLon: 76.9100,
+  maxLon: 76.9600
+};
+
+// ЗОНА 2
+// Ташкентская / Каргалинская / Б. Момышулы / Абая
+
+const ZONE_2 = {
+  id: "zone2",
   name: "Зона 2",
 
-  // Ташкентская / Каргалинская / Б. Момышулы / Абая
   minLat: 43.2050,
-  maxLat: 43.2450,
-  minLon: 76.7600,
+  maxLat: 43.2400,
+
+  minLon: 76.7500,
   maxLon: 76.8500
 };
 
 const DELIVERY_ZONES = [
-  DELIVERY_ZONE_1,
-  DELIVERY_ZONE_2
+  ZONE_1,
+  ZONE_2
 ];
 
-function isInsideZone(point, zone) {
-  return (
-    point.lat >= zone.minLat &&
-    point.lat <= zone.maxLat &&
-    point.lon >= zone.minLon &&
-    point.lon <= zone.maxLon
-  );
-}
-
-function findDeliveryZone(point) {
-  for (const zone of DELIVERY_ZONES) {
-    if (isInsideZone(point, zone)) {
-      return zone;
-    }
-  }
-
-  return null;
-}
-/*
-====================================================
- TOMCHI — НАСТРОЙКИ ДОСТАВКИ
-====================================================
-
-5 ТОЧЕК ОТПРАВЛЕНИЯ НЕ ТРОГАЕМ.
-
-Они используются как места, откуда забирается заказ.
-
-ЗОНЫ ДОСТАВКИ — ОТДЕЛЬНО.
-*/
-
-
-/*
-====================================================
- 2 КВАДРАТНЫЕ ЗОНЫ
-====================================================
-
-ВАЖНО:
-координаты можно потом подкорректировать,
-если понадобится сделать квадрат больше/меньше.
-
-Зона 1:
-Алматы-2 / Сейфуллина / Сатпаева / Абая
-
-Зона 2:
-Ташкентская / Каргалинская / Б. Момышулы / Абая
-*/
-
-const DELIVERY_ZONES = [
-
-  {
-    id: "zone1",
-    name: "Зона 1",
-
-    minLat: 43.2350,
-    maxLat: 43.2750,
-
-    minLon: 76.9000,
-    maxLon: 76.9550
-  },
-
-  {
-    id: "zone2",
-    name: "Зона 2",
-
-    minLat: 43.2000,
-    maxLat: 43.2350,
-
-    minLon: 76.7200,
-    maxLon: 76.8400
-  }
-
-];
-
-
-/*
-====================================================
- ОСНОВНЫЕ ПРАВИЛА
-====================================================
-
-В зоне + заказ >= 5000 ₸
-→ доставка 0 ₸
-
-В зоне + заказ < 5000 ₸
-→ доставка 500 ₸
-
-Вне зоны
-→ стоимость доставки здесь не рассчитываем.
-Клиент самостоятельно вызывает Яндекс Go / inDrive.
-*/
-
-const FREE_DELIVERY_MINIMUM = 5000;
-const SMALL_ORDER_DELIVERY = 500;
-
-
-/*
-====================================================
- 5 ТОЧЕК ОТПРАВЛЕНИЯ
-====================================================
-*/
-
-const DEFAULT = {
-
-  nextOrderId: 1001,
-
-  pickupPoints: [
-
-    {
-      address: "Абылай Хана 24",
-      radius: 1500
-    },
-
-    {
-      address: "Абылай Хана 34",
-      radius: 1500
-    },
-
-    {
-      address: "Жибек Жолы 106",
-      radius: 1500
-    },
-
-    {
-      address: "Яссауи 66а",
-      radius: 1500
-    },
-
-    {
-      address: "Абай 47",
-      radius: 1500
-    }
-
-  ],
-
-  orders: []
-
-};
-
-
-/*
-====================================================
- СОЗДАЁМ data.json ТОЛЬКО ЕСЛИ ЕГО НЕТ
-====================================================
-*/
+// =====================================================
+// DATA
+// =====================================================
 
 if (!fs.existsSync(DATA)) {
-
   fs.writeFileSync(
     DATA,
     JSON.stringify(DEFAULT, null, 2)
   );
-
 }
 
-
-/*
-====================================================
- DATA HELPERS
-====================================================
-*/
-
-const read = () => {
-
-  return JSON.parse(
+const read = () =>
+  JSON.parse(
     fs.readFileSync(DATA, "utf8")
   );
 
-};
-
-
-const save = data => {
-
+const save = data =>
   fs.writeFileSync(
     DATA,
     JSON.stringify(data, null, 2)
   );
 
-};
-
-
-/*
-====================================================
- JSON RESPONSE
-====================================================
-*/
+// =====================================================
+// HELPERS
+// =====================================================
 
 const json = (res, code, data) => {
-
   res.writeHead(code, {
-
     "Content-Type":
       "application/json; charset=utf-8",
 
-    "Access-Control-Allow-Origin":
-      "*",
+    "Access-Control-Allow-Origin": "*",
 
     "Access-Control-Allow-Headers":
       "Content-Type,Authorization"
-
   });
 
-  res.end(
-    JSON.stringify(data)
-  );
-
+  res.end(JSON.stringify(data));
 };
-
-
-/*
-====================================================
- BODY
-====================================================
-*/
 
 const getBody = req =>
-
   new Promise((resolve, reject) => {
-
     let body = "";
 
-    req.on(
-      "data",
-      chunk => {
-        body += chunk;
+    req.on("data", chunk => {
+      body += chunk;
+    });
+
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (e) {
+        reject(e);
       }
-    );
-
-    req.on(
-      "end",
-      () => {
-
-        try {
-
-          resolve(
-            body
-              ? JSON.parse(body)
-              : {}
-          );
-
-        } catch (error) {
-
-          reject(error);
-
-        }
-
-      }
-    );
-
+    });
   });
 
+const auth = req =>
+  req.headers.authorization ===
+  `Bearer ${ADMIN_TOKEN}`;
 
-/*
-====================================================
- ADMIN AUTH
-====================================================
-*/
-
-const auth = req => {
-
-  return (
-    req.headers.authorization ===
-    `Bearer ${ADMIN_TOKEN}`
-  );
-
-};
-
-
-/*
-====================================================
- 2GIS GEOCODING
-====================================================
-*/
+// =====================================================
+// 2GIS
+// =====================================================
 
 async function geocode(query) {
-
   if (!DG_KEY) {
-
-    throw Error(
-      "DGIS_KEY is not configured"
-    );
-
+    throw Error("DGIS_KEY is not configured");
   }
-
 
   const url =
     "https://catalog.api.2gis.com/3.0/items/geocode?" +
-
     new URLSearchParams({
-
-      q:
-        query +
-        ", Алматы, Казахстан",
-
-      fields:
-        "items.point,items.full_address_name",
-
-      page_size:
-        "1",
-
-      key:
-        DG_KEY
-
+      q: query + ", Алматы, Казахстан",
+      fields: "items.point,items.full_address_name",
+      page_size: "1",
+      key: DG_KEY
     });
 
-
-  const response =
-    await fetch(url);
-
+  const response = await fetch(url);
 
   if (!response.ok) {
-
-    throw Error(
-      "Geocoder error"
-    );
-
+    throw Error("Geocoder error");
   }
 
-
-  const data =
-    await response.json();
-
+  const data = await response.json();
 
   const item =
     data?.result?.items?.[0];
 
-
   if (!item?.point) {
-
     return null;
-
   }
-
 
   return {
-
-    lat:
-      Number(item.point.lat),
-
-    lon:
-      Number(item.point.lon),
-
+    lat: Number(item.point.lat),
+    lon: Number(item.point.lon),
     address:
-      item.full_address_name ||
-      query
-
+      item.full_address_name || query
   };
-
 }
 
+// =====================================================
+// ПРОВЕРКА КВАДРАТА
+// =====================================================
 
-/*
-====================================================
- ПРОВЕРКА: ПОПАЛА ЛИ ТОЧКА В КВАДРАТ
-====================================================
-*/
-
-function pointInsideZone(
-  point,
-  zone
-) {
-
+function insideZone(point, zone) {
   return (
-
     point.lat >= zone.minLat &&
-
     point.lat <= zone.maxLat &&
-
     point.lon >= zone.minLon &&
-
     point.lon <= zone.maxLon
-
   );
-
 }
 
-
-/*
-====================================================
- ОПРЕДЕЛЕНИЕ ЗОНЫ
-====================================================
-*/
-
-function findDeliveryZone(
-  coordinates
-) {
-
-  for (
-    const zone
-    of DELIVERY_ZONES
-  ) {
-
-    if (
-      pointInsideZone(
-        coordinates,
-        zone
-      )
-    ) {
-
+function findZone(point) {
+  for (const zone of DELIVERY_ZONES) {
+    if (insideZone(point, zone)) {
       return zone;
-
     }
-
   }
 
-
   return null;
-
 }
 
+// =====================================================
+// РАСЧЁТ ДОСТАВКИ
+// =====================================================
 
-/*
-====================================================
- ПРОВЕРКА АДРЕСА
-====================================================
-*/
+function calculateDelivery(amount, inZone) {
 
-async function checkZone(
-  address,
-  data
-) {
+  // ВНЕ ЗОНЫ
+  if (!inZone) {
+    return {
+      deliveryPrice: null,
+      total: null,
+      externalCourier: true
+    };
+  }
+
+  // В ЗОНЕ + 5000 И БОЛЬШЕ
+  if (amount >= FREE_DELIVERY_MINIMUM) {
+    return {
+      deliveryPrice: 0,
+      total: amount,
+      externalCourier: false
+    };
+  }
+
+  // В ЗОНЕ + МЕНЬШЕ 5000
+  return {
+    deliveryPrice: SMALL_ORDER_DELIVERY,
+    total: amount + SMALL_ORDER_DELIVERY,
+    externalCourier: false
+  };
+}
+
+// =====================================================
+// ПРОВЕРКА АДРЕСА
+// =====================================================
+
+async function checkZone(address, amount = 0) {
 
   const destination =
     await geocode(address);
 
-
   if (!destination) {
-
     return {
-
       found: false,
-
       inZone: false,
-
       message:
-        "Не удалось найти этот адрес на карте. Уточните адрес."
-
+        "Не удалось найти этот адрес. Уточните адрес."
     };
-
   }
 
+  const zone =
+    findZone(destination);
 
-  const matchedZone =
-    findDeliveryZone(
-      destination
+  const inZone = Boolean(zone);
+
+  const delivery =
+    calculateDelivery(
+      Number(amount) || 0,
+      inZone
     );
 
-
-  /*
-  ================================================
-  АДРЕС В ОДНОЙ ИЗ 2 ЗОН
-  ================================================
-  */
-
-  if (matchedZone) {
+  if (!zone) {
 
     return {
-
       found: true,
+      inZone: false,
+      zone: null,
 
-      inZone: true,
+      coordinates: destination,
 
-      zone:
-        matchedZone.name,
+      deliveryPrice: null,
+      total: null,
 
-      coordinates:
-        destination,
+      externalCourier: true,
 
       message:
-        `Адрес входит в ${matchedZone.name}.`
-
+        "Адрес вне зоны доставки. Курьера нужно вызвать через Яндекс Go или inDrive."
     };
-
   }
 
-
-  /*
-  ================================================
-  АДРЕС ВНЕ ЗОН
-  ================================================
-  */
-
   return {
-
     found: true,
 
-    inZone: false,
+    inZone: true,
 
-    zone: null,
+    zone: zone.name,
 
-    coordinates:
-      destination,
+    coordinates: destination,
+
+    deliveryPrice:
+      delivery.deliveryPrice,
+
+    total:
+      delivery.total,
+
+    externalCourier: false,
 
     message:
-      "Адрес находится вне бесплатной зоны."
-
+      delivery.deliveryPrice === 0
+        ? "Адрес входит в зону. Доставка бесплатная — 0 ₸."
+        : "Адрес входит в зону. Доставка — 500 ₸."
   };
-
 }
 
-
-/*
-====================================================
- HTTP SERVER
-====================================================
-*/
+// =====================================================
+// SERVER
+// =====================================================
 
 const server =
   http.createServer(
     async (req, res) => {
 
-      const url =
+      const u =
         new URL(
           req.url,
           `http://${req.headers.host}`
         );
 
-      const method =
-        req.method;
+      const method = req.method;
 
-
-      /*
-      ==============================================
-      OPTIONS
-      ==============================================
-      */
-
-      if (
-        method === "OPTIONS"
-      ) {
-
-        res.writeHead(
-          204,
-          {
-
-            "Access-Control-Allow-Origin":
-              "*",
-
-            "Access-Control-Allow-Headers":
-              "Content-Type,Authorization"
-
-          }
-        );
+      if (method === "OPTIONS") {
+        res.writeHead(204, {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers":
+            "Content-Type,Authorization"
+        });
 
         return res.end();
-
       }
-
 
       try {
 
-
-        /*
-        ==========================================
-        CONFIG
-        ==========================================
-        */
+        // -----------------------------
+        // CONFIG
+        // -----------------------------
 
         if (
-          url.pathname ===
-            "/api/config" &&
+          u.pathname === "/api/config" &&
           method === "GET"
         ) {
 
-          const data =
-            read();
+          const data = read();
 
+          return json(res, 200, {
+            pickupPoints:
+              data.pickupPoints.map(
+                x => x.address
+              ),
 
-          return json(
-            res,
-            200,
-            {
-
-              pickupPoints:
-                data.pickupPoints
-                  .map(
-                    x => x.address
-                  ),
-
-              zones:
-                DELIVERY_ZONES
-                  .map(
-                    x => x.name
-                  )
-
-            }
-          );
-
+            zones:
+              DELIVERY_ZONES.map(
+                x => x.name
+              )
+          });
         }
 
-
-        /*
-        ==========================================
-        CHECK ZONE
-        ==========================================
-        */
+        // -----------------------------
+        // CHECK ZONE
+        // -----------------------------
 
         if (
-          url.pathname ===
-            "/api/check-zone" &&
+          u.pathname === "/api/check-zone" &&
           method === "POST"
         ) {
 
           const body =
             await getBody(req);
 
-
-          if (
-            !body.address
-          ) {
-
-            return json(
-              res,
-              400,
-              {
-
-                found: false,
-
-                inZone: false,
-
-                message:
-                  "Введите адрес доставки."
-
-              }
-            );
-
+          if (!body.address) {
+            return json(res, 400, {
+              found: false,
+              message:
+                "Введите адрес доставки."
+            });
           }
 
-
-          const data =
-            read();
-
-
-          const result =
-            await checkZone(
-              body.address,
-              data
-            );
-
-
           return json(
             res,
             200,
-            result
+            await checkZone(
+              body.address,
+              Number(body.amount || 0)
+            )
           );
-
         }
 
-
-        /*
-        ==========================================
-        CREATE ORDER
-        ==========================================
-        */
+        // -----------------------------
+        // CREATE ORDER
+        // -----------------------------
 
         if (
-          url.pathname ===
-            "/api/orders" &&
+          u.pathname === "/api/orders" &&
           method === "POST"
         ) {
 
           const body =
             await getBody(req);
 
-
-          const data =
-            read();
-
-
-          /*
-          обязательные поля
-          */
+          const data = read();
 
           if (
             !body.name ||
@@ -721,203 +403,74 @@ const server =
             !body.pickup ||
             !body.address
           ) {
-
-            return json(
-              res,
-              400,
-              {
-
-                error:
-                  "Заполните обязательные поля."
-
-              }
-            );
-
+            return json(res, 400, {
+              error:
+                "Заполните обязательные поля."
+            });
           }
 
-
-          /*
-          сумма заказа
-          */
+          if (
+            !data.pickupPoints.some(
+              x => x.address === body.pickup
+            )
+          ) {
+            return json(res, 400, {
+              error:
+                "Недопустимая точка отправления."
+            });
+          }
 
           const amount =
-            Number(
-              body.amount || 0
-            );
-
+            Number(body.amount || 0);
 
           if (
             !Number.isFinite(amount) ||
             amount <= 0
           ) {
-
-            return json(
-              res,
-              400,
-              {
-
-                error:
-                  "Укажите корректную сумму заказа."
-
-              }
-            );
-
+            return json(res, 400, {
+              error:
+                "Введите сумму заказа."
+            });
           }
-
-
-          /*
-          проверяем точку отправления
-          */
-
-          if (
-            !data.pickupPoints.some(
-              x =>
-                x.address ===
-                body.pickup
-            )
-          ) {
-
-            return json(
-              res,
-              400,
-              {
-
-                error:
-                  "Недопустимая точка отправления."
-
-              }
-            );
-
-          }
-
-
-          /*
-          проверяем адрес
-          */
 
           const zone =
             await checkZone(
               body.address,
-              data
+              amount
             );
 
-
-          if (
-            !zone.found
-          ) {
-
-            return json(
-              res,
-              400,
-              {
-
-                error:
-                  zone.message
-
-              }
-            );
-
+          if (!zone.found) {
+            return json(res, 400, {
+              error: zone.message
+            });
           }
-
-
-          let deliveryPrice = null;
-
-          let total = null;
-
-
-          /*
-          ========================================
-          АДРЕС В ЗОНЕ
-          ========================================
-          */
-
-          if (
-            zone.inZone
-          ) {
-
-            if (
-              amount >=
-              FREE_DELIVERY_MINIMUM
-            ) {
-
-              deliveryPrice =
-                0;
-
-            } else {
-
-              deliveryPrice =
-                SMALL_ORDER_DELIVERY;
-
-            }
-
-
-            total =
-              amount +
-              deliveryPrice;
-
-          }
-
-
-          /*
-          ========================================
-          ВНЕ ЗОНЫ
-          ========================================
-
-          deliveryPrice = null
-
-          потому что стоимость
-          Яндекс / inDrive определяет
-          отдельно.
-          */
-
 
           const order = {
-
             id:
               data.nextOrderId++,
 
             createdAt:
-              new Date()
-                .toISOString(),
+              new Date().toISOString(),
 
             name:
-              String(
-                body.name
-              ),
+              String(body.name),
 
             phone:
-              String(
-                body.phone
-              ),
+              String(body.phone),
 
             pickup:
-              String(
-                body.pickup
-              ),
+              String(body.pickup),
 
             address:
-              String(
-                body.address
-              ),
+              String(body.address),
 
-            amount:
-
-              amount,
+            amount,
 
             item:
-              String(
-                body.item || ""
-              ),
+              String(body.item || ""),
 
             comment:
-              String(
-                body.comment || ""
-              ),
-
-
-            /*
-            зона
-            */
+              String(body.comment || ""),
 
             inZone:
               zone.inZone,
@@ -925,319 +478,156 @@ const server =
             zone:
               zone.zone || null,
 
-
-            /*
-            доставка
-            */
-
             deliveryPrice:
-              deliveryPrice,
-
-
-            /*
-            итог
-            */
+              zone.deliveryPrice,
 
             total:
-              total,
+              zone.total,
 
-
-            /*
-            координаты
-            */
+            externalCourier:
+              zone.externalCourier,
 
             coordinates:
               zone.coordinates,
 
-
             status:
               "Новый"
-
           };
 
-
-          data.orders.unshift(
-            order
-          );
-
+          data.orders.unshift(order);
 
           save(data);
-
 
           return json(
             res,
             201,
             order
           );
-
         }
 
-
-        /*
-        ==========================================
-        ADMIN — GET ORDERS
-        ==========================================
-        */
+        // -----------------------------
+        // ADMIN ORDERS
+        // -----------------------------
 
         if (
-          url.pathname ===
-            "/api/orders" &&
+          u.pathname === "/api/orders" &&
           method === "GET"
         ) {
 
-          if (
-            !auth(req)
-          ) {
-
-            return json(
-              res,
-              401,
-              {
-
-                error:
-                  "Нет доступа"
-
-              }
-            );
-
+          if (!auth(req)) {
+            return json(res, 401, {
+              error: "Нет доступа"
+            });
           }
-
 
           return json(
             res,
             200,
             read().orders
           );
-
         }
 
-
-        /*
-        ==========================================
-        ADMIN — CHANGE ORDER
-        ==========================================
-        */
+        // -----------------------------
+        // ADMIN PATCH
+        // -----------------------------
 
         if (
-          url.pathname.startsWith(
+          u.pathname.startsWith(
             "/api/orders/"
           ) &&
           method === "PATCH"
         ) {
 
-          if (
-            !auth(req)
-          ) {
-
-            return json(
-              res,
-              401,
-              {
-
-                error:
-                  "Нет доступа"
-
-              }
-            );
-
+          if (!auth(req)) {
+            return json(res, 401, {
+              error: "Нет доступа"
+            });
           }
-
 
           const id =
             Number(
-              url.pathname
+              u.pathname
                 .split("/")
                 .pop()
             );
 
-
           const body =
             await getBody(req);
 
-
-          const data =
-            read();
-
+          const data = read();
 
           const order =
             data.orders.find(
-              x =>
-                x.id === id
+              x => x.id === id
             );
-
 
           if (!order) {
-
-            return json(
-              res,
-              404,
-              {
-
-                error:
-                  "Заказ не найден"
-
-              }
-            );
-
+            return json(res, 404, {
+              error:
+                "Заказ не найден"
+            });
           }
 
-
-          if (
-            body.status
-          ) {
-
+          if (body.status) {
             order.status =
               body.status;
-
           }
-
 
           if (
-            "deliveryPrice"
-            in body
+            "deliveryPrice" in body
           ) {
-
             order.deliveryPrice =
               body.deliveryPrice;
-
           }
 
-
           save(data);
-
 
           return json(
             res,
             200,
             order
           );
-
         }
 
-
-        /*
-        ==========================================
-        ADMIN — ZONE SETTINGS
-        ==========================================
-        */
-
-        if (
-          url.pathname ===
-            "/api/zone-settings" &&
-          method === "GET"
-        ) {
-
-          if (
-            !auth(req)
-          ) {
-
-            return json(
-              res,
-              401,
-              {
-
-                error:
-                  "Нет доступа"
-
-              }
-            );
-
-          }
-
-
-          return json(
-            res,
-            200,
-            {
-
-              pickupPoints:
-                read().pickupPoints,
-
-              deliveryZones:
-                DELIVERY_ZONES
-
-            }
-          );
-
-        }
-
-
-        /*
-        ==========================================
-        STATIC FILES
-        ==========================================
-        */
+        // -----------------------------
+        // STATIC FILES
+        // -----------------------------
 
         let file =
-          url.pathname === "/"
+          u.pathname === "/"
             ? "/index.html"
-            : url.pathname;
+            : u.pathname;
 
-
-        if (
-          file === "/admin"
-        ) {
-
-          file =
-            "/admin.html";
-
+        if (file === "/admin") {
+          file = "/admin.html";
         }
-
 
         const full =
           path.normalize(
-            path.join(
-              PUBLIC,
-              file
-            )
+            path.join(ROOT, file)
           );
 
-
-        if (
-          !full.startsWith(
-            PUBLIC
-          )
-        ) {
-
-          return json(
-            res,
-            403,
-            {
-
-              error:
-                "Forbidden"
-
-            }
-          );
-
+        if (!full.startsWith(ROOT)) {
+          return json(res, 403, {
+            error: "Forbidden"
+          });
         }
-
 
         fs.readFile(
           full,
           (error, content) => {
 
             if (error) {
-
-              res.writeHead(
-                404
-              );
-
+              res.writeHead(404);
               return res.end(
                 "Not found"
               );
-
             }
 
-
             const ext =
-              path.extname(
-                full
-              );
-
+              path.extname(full);
 
             const types = {
-
               ".html":
                 "text/html; charset=utf-8",
 
@@ -1245,65 +635,36 @@ const server =
                 "text/javascript; charset=utf-8",
 
               ".css":
-                "text/css; charset=utf-8",
-
-              ".json":
-                "application/json; charset=utf-8"
-
+                "text/css; charset=utf-8"
             };
 
+            res.writeHead(200, {
+              "Content-Type":
+                types[ext] ||
+                "text/plain; charset=utf-8"
+            });
 
-            res.writeHead(
-              200,
-              {
-
-                "Content-Type":
-                  types[ext] ||
-                  "text/plain; charset=utf-8"
-
-              }
-            );
-
-
-            res.end(
-              content
-            );
-
+            res.end(content);
           }
         );
-
 
       } catch (error) {
 
-        console.error(
-          error
-        );
+        console.error(error);
 
-
-        json(
-          res,
-          500,
-          {
-
-            error:
-              error.message
-
-          }
-        );
-
+        json(res, 500, {
+          error:
+            error.message
+        });
       }
-
     }
   );
-
 
 server.listen(
   PORT,
   () => {
-
     console.log(
       `Tomchi: http://localhost:${PORT}`
     );
-
   }
 );
