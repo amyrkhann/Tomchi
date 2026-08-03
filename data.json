@@ -1,0 +1,26 @@
+{
+  "nextOrderId": 1001,
+  "pickupPoints": [
+    {
+      "address": "Абылай Хана 24",
+      "radius": 1500
+    },
+    {
+      "address": "Абылай Хана 34",
+      "radius": 1500
+    },
+    {
+      "address": "Жибек Жолы 106",
+      "radius": 1500
+    },
+    {
+      "address": "Яссауи 66а",
+      "radius": 1500
+    },
+    {
+      "address": "Абай 47",
+      "radius": 1500
+    }
+  ],
+  "orders": []
+}

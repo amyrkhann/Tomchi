@@ -1,0 +1,29 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>JET DELIVERY</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f5f6f8;color:#111}header{background:#101010;color:#fff;padding:18px 6%;display:flex;justify-content:space-between}.logo{font-size:22px;font-weight:900}.logo b{color:#9cff00}header a{color:#fff;margin-left:20px;text-decoration:none}.hero{background:#101010;color:#fff;padding:65px 6%;display:grid;grid-template-columns:1fr 1fr;gap:30px}.hero h1{font-size:clamp(42px,6vw,70px);line-height:.95;margin:0 0 18px}.hero p{color:#bbb;font-size:18px}.wrap{max-width:1100px;margin:auto;padding:50px 6%}.card{background:#fff;border-radius:20px;padding:23px;box-shadow:0 10px 35px #0000000b}.btn{background:#9cff00;border:0;padding:14px 18px;border-radius:12px;font-weight:900;cursor:pointer}.grid{display:grid;grid-template-columns:1fr 1fr;gap:17px}label{font-weight:700;font-size:13px}input,select{width:100%;margin-top:7px;padding:14px;border:1px solid #ddd;border-radius:12px;font:inherit}.full{grid-column:1/-1}.zone{margin-top:15px;padding:15px;border-radius:13px;font-weight:800}.free{background:#eaffcf;color:#315d00}.paid{background:#fff0cf;color:#805000}.bad{background:#ffe0e0;color:#850000}.map{height:280px;margin-top:16px;border-radius:15px;overflow:hidden;border:1px solid #ddd}.muted{color:#777;font-size:13px}@media(max-width:750px){.hero,.grid{grid-template-columns:1fr}.full{grid-column:auto}nav{display:none}}
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head><body><header><div class="logo">JET<b>•</b>DELIVERY</div><nav><a href="#order">Заказать</a><a href="/admin">Админ</a></nav></header>
+<section class="hero"><div><h1>Доставка<br>по Алматы.</h1><p>Введите адрес — мы определим его на карте и автоматически проверим, входит ли он в бесплатную зону.</p><a class="btn" href="#order">Оформить заказ</a></div><div class="card"><b>Как определяется зона?</b><p class="muted">Адрес переводится в координаты через 2GIS. Система измеряет расстояние до ближайшей точки отправления и сравнивает его с установленным радиусом бесплатной доставки.</p><b>5 точек отправления</b></div></section>
+<main class="wrap" id="order"><h2>Оформить заказ</h2><div class="card"><form id="form" class="grid">
+<label>Имя<input id="name" required></label><label>Телефон<input id="phone" required placeholder="+7 700 000 00 00"></label>
+<label>Откуда<select id="pickup" required></select></label><label>Куда<input id="address" required placeholder="Например: Алматы, Абылай хана 50"></label>
+<div class="full"><div id="zone" class="zone paid">Введите адрес доставки.</div><div id="map" class="map"></div></div>
+<label>Что доставить<input id="item"></label><label>Комментарий<input id="comment"></label>
+<div class="full"><button class="btn">Создать заказ</button><div id="result"></div></div></form></div></main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let timer,map,marker;
+const $=id=>document.getElementById(id);
+async function init(){const c=await (await fetch('/api/config')).json();c.pickupPoints.forEach(x=>{$('pickup').add(new Option(x,x))});
+ map=L.map('map').setView([43.2389,76.8897],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map)}
+async function check(){const a=$('address').value.trim(),z=$('zone');if(!a){z.className='zone paid';z.textContent='Введите адрес доставки.';return null}
+ z.className='zone paid';z.textContent='Проверяем адрес на карте…';
+ const r=await fetch('/api/check-zone',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({address:a})}),x=await r.json();
+ if(!x.found){z.className='zone bad';z.textContent=x.message;return x}
+ z.className='zone '+(x.free?'free':'paid');z.textContent=x.message+(x.free?'':` Ближайшая точка: ${x.pickup}, расстояние ≈ ${x.distance} м.`);
+ if(marker)map.removeLayer(marker);marker=L.marker([x.coordinates.lat,x.coordinates.lon]).addTo(map).bindPopup(x.coordinates.address||a).openPopup();map.setView([x.coordinates.lat,x.coordinates.lon],15);return x}
+$('address').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(check,500)});
+$('form').addEventListener('submit',async e=>{e.preventDefault();const z=await check();if(!z||!z.found)return;const r=await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:$('name').value,phone:$('phone').value,pickup:$('pickup').value,address:$('address').value,item:$('item').value,comment:$('comment').value})}),x=await r.json();$('result').innerHTML='<div class="zone '+(x.free?'free':'paid')+'">'+(r.ok?'Заказ #'+x.id+' создан. '+(x.free?'Доставка бесплатная — 0 ₸.':'Адрес вне бесплатной зоны — стоимость назначит администратор.'):(x.error||'Ошибка'))+'</div>';if(r.ok)e.target.reset()});
+init();
+</script></body></html>
