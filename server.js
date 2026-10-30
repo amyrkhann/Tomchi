@@ -1030,31 +1030,25 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, order);
     }
 
+    
     // СТАТИЧЕСКИЕ ФАЙЛЫ САЙТА
     let relative = pathname === "/"
-      ? "public/index.html"
+      ? "index.html"
       : pathname === "/admin"
-        ? "public/admin.html"
+        ? "admin.html"
         : pathname.replace(/^\/+/, "");
 
-    if (
-      !relative.startsWith("public/") &&
-      !relative.startsWith("uploads/") &&
-      !relative.startsWith("images/")
-    ) {
-      relative = "public/" + relative;
-    }
-
     if (relative.startsWith("uploads/")) {
-      relative = "public/" + relative;
+      relative = path.join("public", relative);
     }
 
     const full = path.resolve(ROOT, relative);
-    const publicRoot = path.resolve(ROOT, "public") + path.sep;
+    const allowedRoot = path.resolve(ROOT);
+    const publicRoot = path.resolve(ROOT, "public");
 
     if (
-      !full.startsWith(publicRoot) &&
-      full !== path.resolve(ROOT, "public")
+      !full.startsWith(allowedRoot + path.sep) &&
+      full !== allowedRoot
     ) {
       return json(res, 403, { error: "Forbidden" });
     }
@@ -1089,18 +1083,3 @@ const server = http.createServer(async (req, res) => {
 
       res.end(content);
     });
-
-  } catch (error) {
-    console.error(error);
-
-    if (!res.headersSent) {
-      json(res, 500, {
-        error: error.message || "Внутренняя ошибка сервера"
-      });
-    }
-  }
-});
-
-server.listen(PORT, () => {
-  console.log(`Tomchi Premium запущен на порту ${PORT}`);
-});
