@@ -443,3 +443,664 @@ function publicMenu(branchId) {
     products
   };
 }
+function safeFileName(name) {
+  return String(name || "image")
+    .replace(/[^a-z0-9._-]/gi, "_")
+    .slice(0, 80);
+}
+
+const server = http.createServer(async (req, res) => {
+  const u = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+  const method = req.method;
+  const pathname = decodeURIComponent(u.pathname);
+
+  if (method === "OPTIONS") {
+    res.writeHead(204, {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type,Authorization",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    });
+    return res.end();
+  }
+
+  try {
+    // ПУБЛИЧНЫЕ НАСТРОЙКИ
+    if (pathname === "/api/config" && method === "GET") {
+      const data = read();
+
+      return json(res, 200, {
+        pickupPoints: data.pickupPoints,
+        zones: DELIVERY_ZONES.map(z => z.name),
+        deliveryHours: "11:00-23:00",
+        freeDeliveryMinimum: FREE_DELIVERY_MINIMUM,
+        smallOrderDelivery: SMALL_ORDER_DELIVERY
+      });
+    }
+
+    // МЕНЮ ДЛЯ ВЫБРАННОГО ФИЛИАЛА
+    if (pathname === "/api/menu" && method === "GET") {
+      return json(
+        res,
+        200,
+        publicMenu(u.searchParams.get("branchId") || 1)
+      );
+    }
+
+    // ПРОВЕРКА ЗОНЫ ДОСТАВКИ
+    if (pathname === "/api/check-zone" && method === "POST") {
+      const body = await getBody(req);
+
+      if (!body.address) {
+        return json(res, 400, {
+          found: false,
+          message: "Введите адрес доставки."
+        });
+      }
+
+      return json(
+        res,
+        200,
+        await checkZone(body.address, Number(body.amount || 0))
+      );
+    }
+
+    // СОЗДАНИЕ ЗАКАЗА
+    if (pathname === "/api/orders" && method === "POST") {
+      const body = await getBody(req);
+      const data = read();
+
+      if (
+        !body.name ||
+        !body.phone ||
+        !body.pickup ||
+        !body.address
+      ) {
+        return json(res, 400, {
+          error: "Заполните имя, телефон, филиал и адрес."
+        });
+      }
+
+      const branch = data.pickupPoints.find(p =>
+        String(p.id) === String(body.branchId) ||
+        p.address === body.pickup ||
+        p.name === body.pickup
+      );
+
+      if (!branch) {
+        return json(res, 400, {
+          error: "Выберите действующий филиал."
+        });
+      }
+
+      const items = Array.isArray(body.items) ? body.items : [];
+      let amount = Number(body.amount || 0);
+      let itemText = String(body.item || "");
+
+      if (items.length) {
+        amount = 0;
+
+        itemText = items.map(item => {
+          const product = data.menu.products.find(
+            p => p.id === item.id
+          );
+
+          if (!product || product.active === false) {
+            throw new Error(
+              "Одно из выбранных блюд больше недоступно."
+            );
+          }
+
+          const clean = cleanProductForBranch(
+            product,
+            branch.id
+          );
+
+          if (!clean.active) {
+            throw new Error(
+              `Блюдо «${product.name}» недоступно в выбранном филиале.`
+            );
+          }
+
+          const qty = Math.max(
+            1,
+            Math.min(99, Number(item.quantity || 1))
+          );
+
+          amount += clean.price * qty;
+
+          return `${product.name} x${qty} — ${clean.price * qty} ₸`;
+        }).join("\n");
+      }
+
+      if (!Number.isFinite(amount) || amount <= 0) {
+        return json(res, 400, {
+          error: "Корзина пуста или сумма заказа некорректна."
+        });
+      }
+
+      let zoneResult;
+
+      if (body.checkDelivery === false) {
+        zoneResult = {
+          found: true,
+          inZone: null,
+          zone: null,
+          deliveryPrice: 0,
+          total: amount,
+          externalCourier: false,
+          coordinates: null
+        };
+      } else {
+        zoneResult = await checkZone(body.address, amount);
+
+        if (!zoneResult.found) {
+          return json(res, 400, {
+            error: zoneResult.message
+          });
+        }
+      }
+
+      const order = {
+        id: data.nextOrderId++,
+        createdAt: new Date().toISOString(),
+        name: String(body.name),
+        phone: String(body.phone),
+        pickup: branch.address,
+        branchId: branch.id,
+        branchName: branch.name,
+        address: String(body.address),
+        amount,
+        item: itemText,
+        items,
+        comment: String(body.comment || ""),
+        inZone: zoneResult.inZone,
+        zone: zoneResult.zone || null,
+        deliveryPrice: zoneResult.deliveryPrice,
+        total: zoneResult.total,
+        externalCourier: zoneResult.externalCourier,
+        coordinates: zoneResult.coordinates || null,
+        status: "Новый"
+      };
+
+      data.orders.unshift(order);
+      save(data);
+
+      return json(res, 201, order);
+    }
+
+    // АВТОРИЗАЦИЯ АДМИНКИ
+    if (
+      pathname.startsWith("/api/admin/") ||
+      (pathname === "/api/orders" && method !== "POST") ||
+      (pathname.startsWith("/api/orders/") && method === "PATCH")
+    ) {
+      if (!requireAdmin(req, res)) return;
+    }
+
+    // ПОЛУЧИТЬ ВСЁ МЕНЮ ДЛЯ АДМИНКИ
+    if (pathname === "/api/admin/menu" && method === "GET") {
+      return json(res, 200, read().menu);
+    }
+
+    // ДОБАВИТЬ КАТЕГОРИЮ
+    if (pathname === "/api/admin/categories" && method === "POST") {
+      const body = await getBody(req);
+
+      if (!body.name || !String(body.name).trim()) {
+        return json(res, 400, {
+          error: "Введите название категории."
+        });
+      }
+
+      const data = read();
+
+      const category = {
+        id: "cat-" + crypto.randomUUID(),
+        name: String(body.name).trim(),
+        emoji: String(body.emoji || "🍽️"),
+        active: body.active !== false,
+        sort: Number(
+          body.sort || data.menu.categories.length + 1
+        )
+      };
+
+      data.menu.categories.push(category);
+      save(data);
+
+      return json(res, 201, category);
+    }
+
+    // ИЗМЕНИТЬ ИЛИ УДАЛИТЬ КАТЕГОРИЮ
+    const categoryMatch = pathname.match(
+      /^\/api\/admin\/categories\/([^/]+)$/
+    );
+
+    if (
+      categoryMatch &&
+      (method === "PATCH" || method === "DELETE")
+    ) {
+      const id = categoryMatch[1];
+      const data = read();
+
+      const category = data.menu.categories.find(
+        x => x.id === id
+      );
+
+      if (!category) {
+        return json(res, 404, {
+          error: "Категория не найдена."
+        });
+      }
+
+      if (method === "DELETE") {
+        data.menu.categories = data.menu.categories.filter(
+          x => x.id !== id
+        );
+
+        data.menu.products.forEach(p => {
+          if (p.categoryId === id) p.active = false;
+        });
+      } else {
+        const body = await getBody(req);
+
+        if (body.name !== undefined) {
+          category.name = String(body.name).trim();
+        }
+
+        if (body.emoji !== undefined) {
+          category.emoji = String(body.emoji);
+        }
+
+        if (body.active !== undefined) {
+          category.active = Boolean(body.active);
+        }
+
+        if (body.sort !== undefined) {
+          category.sort = Number(body.sort);
+        }
+      }
+
+      save(data);
+      return json(res, 200, { success: true });
+    }
+
+    // ДОБАВИТЬ БЛЮДО
+    if (pathname === "/api/admin/products" && method === "POST") {
+      const body = await getBody(req);
+
+      if (!body.name || !body.categoryId) {
+        return json(res, 400, {
+          error: "Укажите название блюда и категорию."
+        });
+      }
+
+      const data = read();
+
+      if (!data.menu.categories.some(
+        c => c.id === body.categoryId
+      )) {
+        return json(res, 400, {
+          error: "Категория не найдена."
+        });
+      }
+
+      const basePrice = Number(body.basePrice);
+
+      if (!Number.isFinite(basePrice) || basePrice < 0) {
+        return json(res, 400, {
+          error: "Укажите правильную цену."
+        });
+      }
+
+      const id = "product-" + crypto.randomUUID();
+      const branchSettings = {};
+
+      const selected = Array.isArray(body.branchIds)
+        ? body.branchIds.map(String)
+        : data.pickupPoints.map(p => String(p.id));
+
+      for (const branch of data.pickupPoints) {
+        branchSettings[String(branch.id)] = {
+          enabled: selected.includes(String(branch.id)),
+          price: basePrice
+        };
+      }
+
+      const product = {
+        id,
+        categoryId: String(body.categoryId),
+        name: String(body.name).trim(),
+        description: String(body.description || ""),
+        image: String(body.image || ""),
+        emoji: String(body.emoji || "🍽️"),
+        basePrice,
+        active: body.active !== false,
+        sort: Number(
+          body.sort || data.menu.products.length + 1
+        ),
+        branchSettings
+      };
+
+      data.menu.products.push(product);
+      save(data);
+
+      return json(res, 201, product);
+    }
+
+    // ИЗМЕНИТЬ ИЛИ УДАЛИТЬ БЛЮДО
+    const productMatch = pathname.match(
+      /^\/api\/admin\/products\/([^/]+)$/
+    );
+
+    if (
+      productMatch &&
+      (method === "PATCH" || method === "DELETE")
+    ) {
+      const id = productMatch[1];
+      const data = read();
+
+      const product = data.menu.products.find(
+        x => x.id === id
+      );
+
+      if (!product) {
+        return json(res, 404, {
+          error: "Блюдо не найдено."
+        });
+      }
+
+      if (method === "DELETE") {
+        product.active = false;
+      } else {
+        const body = await getBody(req);
+
+        if (body.name !== undefined) {
+          product.name = String(body.name).trim();
+        }
+
+        if (body.categoryId !== undefined) {
+          product.categoryId = String(body.categoryId);
+        }
+
+        if (body.description !== undefined) {
+          product.description = String(body.description);
+        }
+
+        if (body.image !== undefined) {
+          product.image = String(body.image);
+        }
+
+        if (body.emoji !== undefined) {
+          product.emoji = String(body.emoji);
+        }
+
+        if (body.basePrice !== undefined) {
+          product.basePrice = Number(body.basePrice);
+        }
+
+        if (body.active !== undefined) {
+          product.active = Boolean(body.active);
+        }
+
+        if (body.sort !== undefined) {
+          product.sort = Number(body.sort);
+        }
+
+        if (
+          body.branchSettings &&
+          typeof body.branchSettings === "object"
+        ) {
+          for (
+            const [branchId, setting]
+            of Object.entries(body.branchSettings)
+          ) {
+            if (!data.pickupPoints.some(
+              p => String(p.id) === String(branchId)
+            )) continue;
+
+            product.branchSettings[String(branchId)] = {
+              enabled: setting.enabled !== false,
+              price: Number(
+                setting.price ?? product.basePrice
+              )
+            };
+          }
+        }
+
+        if (Array.isArray(body.branchIds)) {
+          for (const branch of data.pickupPoints) {
+            const key = String(branch.id);
+
+            product.branchSettings[key] =
+              product.branchSettings[key] ||
+              { price: product.basePrice };
+
+            product.branchSettings[key].enabled =
+              body.branchIds.map(String).includes(key);
+          }
+        }
+      }
+
+      save(data);
+      return json(res, 200, product);
+    }
+
+    // ФИЛИАЛЫ
+    if (pathname === "/api/admin/branches" && method === "GET") {
+      return json(res, 200, read().pickupPoints);
+    }
+
+    if (pathname === "/api/admin/branches" && method === "PUT") {
+      const body = await getBody(req);
+
+      if (!Array.isArray(body.pickupPoints)) {
+        return json(res, 400, {
+          error: "Неверный список филиалов."
+        });
+      }
+
+      const data = read();
+
+      data.pickupPoints = data.pickupPoints.map(old => {
+        const incoming = body.pickupPoints.find(
+          x => Number(x.id) === Number(old.id)
+        );
+
+        return incoming
+          ? { ...old, ...incoming, id: old.id }
+          : old;
+      });
+
+      save(data);
+      return json(res, 200, data.pickupPoints);
+    }
+
+    // НАСТРОЙКИ ЗОН
+    if (pathname === "/api/zone-settings" && method === "GET") {
+      return json(
+        res,
+        200,
+        read().pickupPoints.map(p => ({
+          address: p.address,
+          radius: Number(p.radius || 1500)
+        }))
+      );
+    }
+
+    if (pathname === "/api/zone-settings" && method === "PUT") {
+      const body = await getBody(req);
+
+      if (!Array.isArray(body.pickupPoints)) {
+        return json(res, 400, {
+          error: "Неверные настройки зон."
+        });
+      }
+
+      const data = read();
+
+      data.pickupPoints = data.pickupPoints.map((p, i) => ({
+        ...p,
+        radius: Number(
+          body.pickupPoints[i]?.radius ?? p.radius ?? 1500
+        )
+      }));
+
+      save(data);
+      return json(res, 200, { success: true });
+    }
+
+    // ЗАГРУЗКА ФОТОГРАФИЙ
+    if (pathname === "/api/admin/upload" && method === "POST") {
+      const body = await getBody(req, 12 * 1024 * 1024);
+
+      const match = String(body.data || "").match(
+        /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/
+      );
+
+      if (!match) {
+        return json(res, 400, {
+          error: "Поддерживаются JPG, PNG и WEBP."
+        });
+      }
+
+      const mime = match[1];
+      const ext = mime === "image/jpeg"
+        ? ".jpg"
+        : mime === "image/png"
+          ? ".png"
+          : ".webp";
+
+      const buffer = Buffer.from(match[2], "base64");
+
+      if (buffer.length > 8 * 1024 * 1024) {
+        return json(res, 400, {
+          error: "Изображение должно быть меньше 8 МБ."
+        });
+      }
+
+      fs.mkdirSync(UPLOADS, { recursive: true });
+
+      const filename =
+        Date.now() + "-" +
+        crypto.randomBytes(5).toString("hex") + ext;
+
+      fs.writeFileSync(
+        path.join(UPLOADS, filename),
+        buffer
+      );
+
+      return json(res, 201, {
+        url: "/uploads/" + filename
+      });
+    }
+
+    // СПИСОК ЗАКАЗОВ
+    if (pathname === "/api/orders" && method === "GET") {
+      return json(res, 200, read().orders);
+    }
+
+    // ИЗМЕНИТЬ СТАТУС ЗАКАЗА
+    const orderMatch = pathname.match(
+      /^\/api\/orders\/(\d+)$/
+    );
+
+    if (orderMatch && method === "PATCH") {
+      const body = await getBody(req);
+      const data = read();
+
+      const order = data.orders.find(
+        x => x.id === Number(orderMatch[1])
+      );
+
+      if (!order) {
+        return json(res, 404, {
+          error: "Заказ не найден."
+        });
+      }
+
+      if (body.status) {
+        order.status = String(body.status);
+      }
+
+      if ("deliveryPrice" in body) {
+        order.deliveryPrice = body.deliveryPrice;
+      }
+
+      save(data);
+      return json(res, 200, order);
+    }
+
+    // СТАТИЧЕСКИЕ ФАЙЛЫ САЙТА
+    let relative = pathname === "/"
+      ? "public/index.html"
+      : pathname === "/admin"
+        ? "public/admin.html"
+        : pathname.replace(/^\/+/, "");
+
+    if (
+      !relative.startsWith("public/") &&
+      !relative.startsWith("uploads/") &&
+      !relative.startsWith("images/")
+    ) {
+      relative = "public/" + relative;
+    }
+
+    if (relative.startsWith("uploads/")) {
+      relative = "public/" + relative;
+    }
+
+    const full = path.resolve(ROOT, relative);
+    const publicRoot = path.resolve(ROOT, "public") + path.sep;
+
+    if (
+      !full.startsWith(publicRoot) &&
+      full !== path.resolve(ROOT, "public")
+    ) {
+      return json(res, 403, { error: "Forbidden" });
+    }
+
+    fs.readFile(full, (err, content) => {
+      if (err) {
+        res.writeHead(404, {
+          "Content-Type": "text/plain; charset=utf-8"
+        });
+        return res.end("Not found");
+      }
+
+      const ext = path.extname(full).toLowerCase();
+
+      const types = {
+        ".html": "text/html; charset=utf-8",
+        ".js": "text/javascript; charset=utf-8",
+        ".css": "text/css; charset=utf-8",
+        ".json": "application/json; charset=utf-8",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".svg": "image/svg+xml",
+        ".ico": "image/x-icon"
+      };
+
+      res.writeHead(200, {
+        "Content-Type": types[ext] ||
+          "application/octet-stream"
+      });
+
+      res.end(content);
+    });
+
+  } catch (error) {
+    console.error(error);
+
+    if (!res.headersSent) {
+      json(res, 500, {
+        error: error.message || "Внутренняя ошибка сервера"
+      });
+    }
+  }
+});
+
+server.listen(PORT, () => {
+  console.log(`Tomchi Premium запущен на порту ${PORT}`);
+});
