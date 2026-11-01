@@ -1099,33 +1099,3 @@ fs.readFile(full, (err, content) => {
 
   res.end(content);
 });
-    fs.readFile(full, (err, content) => {
-      if (err) {
-        res.writeHead(404, {
-          "Content-Type": "text/plain; charset=utf-8"
-        });
-        return res.end("Not found");
-      }
-
-      const ext = path.extname(full).toLowerCase();
-
-      const types = {
-        ".html": "text/html; charset=utf-8",
-        ".js": "text/javascript; charset=utf-8",
-        ".css": "text/css; charset=utf-8",
-        ".json": "application/json; charset=utf-8",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".png": "image/png",
-        ".webp": "image/webp",
-        ".svg": "image/svg+xml",
-        ".ico": "image/x-icon"
-      };
-
-      res.writeHead(200, {
-        "Content-Type": types[ext] ||
-          "application/octet-stream"
-      });
-
-      res.end(content);
-    });
