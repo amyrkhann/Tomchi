@@ -630,10 +630,11 @@ const server = http.createServer(async (req, res) => {
 
     // АВТОРИЗАЦИЯ АДМИНКИ
     if (
-      pathname.startsWith("/api/admin/") ||
-      (pathname === "/api/orders" && method !== "POST") ||
-      (pathname.startsWith("/api/orders/") && method === "PATCH")
-    ) {
+  pathname.startsWith("/api/admin/") ||
+  pathname === "/api/zone-settings" ||
+  (pathname === "/api/orders" && method !== "POST") ||
+  (pathname.startsWith("/api/orders/") && method === "PATCH")
+) {
       if (!requireAdmin(req, res)) return;
     }
 
