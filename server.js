@@ -1032,27 +1032,73 @@ const server = http.createServer(async (req, res) => {
 
     
     // СТАТИЧЕСКИЕ ФАЙЛЫ САЙТА
-    let relative = pathname === "/"
-      ? "index.html"
-      : pathname === "/admin"
-        ? "admin.html"
-        : pathname.replace(/^\/+/, "");
+let relative;
 
-    if (relative.startsWith("uploads/")) {
-      relative = path.join("public", relative);
-    }
+if (pathname === "/" || pathname === "/index.html") {
+  relative = "index.html";
+} else if (
+  pathname === "/admin" ||
+  pathname === "/admin.html"
+) {
+  relative = "admin.html";
+} else if (
+  /^\/(images|uploads|assets)\//.test(pathname)
+) {
+  relative = path.join(
+    "public",
+    pathname.replace(/^\/+/, "")
+  );
+} else {
+  return json(res, 404, {
+    error: "Not found"
+  });
+}
 
-    const full = path.resolve(ROOT, relative);
-    const allowedRoot = path.resolve(ROOT);
-    const publicRoot = path.resolve(ROOT, "public");
+const full = path.resolve(ROOT, relative);
 
-    if (
-      !full.startsWith(allowedRoot + path.sep) &&
-      full !== allowedRoot
-    ) {
-      return json(res, 403, { error: "Forbidden" });
-    }
+const publicRoot =
+  path.resolve(ROOT, "public") + path.sep;
 
+const isRootPage =
+  full === path.resolve(ROOT, "index.html") ||
+  full === path.resolve(ROOT, "admin.html");
+
+if (!isRootPage && !full.startsWith(publicRoot)) {
+  return json(res, 403, {
+    error: "Forbidden"
+  });
+}
+
+fs.readFile(full, (err, content) => {
+  if (err) {
+    res.writeHead(404, {
+      "Content-Type": "text/plain; charset=utf-8"
+    });
+    return res.end("Not found");
+  }
+
+  const ext = path.extname(full).toLowerCase();
+
+  const types = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon"
+  };
+
+  res.writeHead(200, {
+    "Content-Type":
+      types[ext] || "application/octet-stream"
+  });
+
+  res.end(content);
+});
     fs.readFile(full, (err, content) => {
       if (err) {
         res.writeHead(404, {
