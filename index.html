@@ -2,883 +2,934 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#916718">
-  <title>Tomchi Premium</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#916718">
+<title>TOMCHI PREMIUM</title>
 
-  <style>
-    :root {
-      --gold: #916718;
-      --dark-gold: #795712;
-      --cream: #f8f3e9;
-      --white: #ffffff;
-      --text: #302719;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: Arial, sans-serif;
-      background: var(--cream);
-      color: var(--text);
-    }
-
-    button, input, textarea {
-      font: inherit;
-    }
-
-    button {
-      cursor: pointer;
-    }
-
-    .header {
-      background: var(--gold);
-      color: white;
-      text-align: center;
-      padding: 22px 15px;
-    }
-
-    .logo {
-      font-size: 29px;
-      font-weight: 800;
-      letter-spacing: 2px;
-    }
-
-    .header-subtitle {
-      font-size: 13px;
-      margin-top: 5px;
-      opacity: .9;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 700px;
-      margin: auto;
-      padding: 18px 14px 40px;
-    }
-
-    .section {
-      background: white;
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 17px;
-      box-shadow: 0 3px 14px rgba(0,0,0,.05);
-    }
-
-    h2 {
-      color: var(--dark-gold);
-      font-size: 21px;
-      margin-bottom: 12px;
-    }
-
-    p {
-      line-height: 1.5;
-    }
-
-    .language-screen {
-      min-height: 75vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      padding: 25px;
-    }
-
-    .language-screen h1 {
-      color: var(--gold);
-      font-size: 34px;
-      margin-bottom: 12px;
-    }
-
-    .language-screen p {
-      margin-bottom: 25px;
-      color: #6d6252;
-    }
-
-    .language-buttons {
-      display: flex;
-      gap: 12px;
-      width: 100%;
-      max-width: 330px;
-    }
-
-    .language-buttons button {
-      flex: 1;
-      padding: 16px;
-      border: none;
-      border-radius: 12px;
-      background: var(--gold);
-      color: white;
-      font-weight: bold;
-      font-size: 17px;
-    }
-
-    .language-buttons button:hover,
-    .main-button:hover,
-    .add-button:hover {
-      background: var(--dark-gold);
-    }
-
-    .zone-image {
-      display: block;
-      width: 100%;
-      border-radius: 12px;
-      margin-top: 12px;
-      object-fit: contain;
-    }
-
-    .delivery-hours {
-      color: var(--gold);
-      font-weight: bold;
-      margin-top: 12px;
-    }
-
-    .categories {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 3px 0 12px;
-    }
-
-    .category-btn {
-      flex-shrink: 0;
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      background: white;
-      border-radius: 25px;
-      padding: 10px 16px;
-      font-size: 14px;
-    }
-
-    .category-btn.active {
-      background: var(--gold);
-      color: white;
-    }
-
-    .products {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .product {
-      background: white;
-      border: 1px solid #eee6d8;
-      border-radius: 14px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .product-photo {
-      height: 115px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f5eddf;
-      font-size: 55px;
-    }
-
-    .product-info {
-      padding: 11px;
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-    }
-
-    .product-name {
-      font-weight: bold;
-      font-size: 15px;
-      min-height: 38px;
-    }
-
-    .product-price {
-      color: var(--gold);
-      font-weight: bold;
-      margin: 8px 0;
-    }
-
-    .add-button {
-      width: 100%;
-      border: none;
-      border-radius: 9px;
-      background: var(--gold);
-      color: white;
-      padding: 10px 5px;
-      font-weight: bold;
-      margin-top: auto;
-    }
-
-    .cart-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid #eee;
-      padding: 12px 0;
-    }
-
-    .cart-item-name {
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .cart-item-price {
-      color: var(--gold);
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .quantity {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .quantity button {
-      width: 30px;
-      height: 30px;
-      border: none;
-      border-radius: 8px;
-      background: var(--gold);
-      color: white;
-      font-size: 18px;
-    }
-
-    .total {
-      display: flex;
-      justify-content: space-between;
-      font-size: 19px;
-      font-weight: bold;
-      color: var(--dark-gold);
-      margin-top: 17px;
-    }
-
-    .empty-cart {
-      color: #8a8175;
-      padding: 10px 0;
-    }
-
-    .form-group {
-      margin-bottom: 13px;
-    }
-
-    .form-group label {
-      display: block;
-      font-weight: bold;
-      font-size: 14px;
-      margin-bottom: 6px;
-    }
-
-    .form-group input,
-    .form-group textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ded5c7;
-      border-radius: 9px;
-      outline: none;
-      background: #fffdf9;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus {
-      border-color: var(--gold);
-    }
-
-    .form-group textarea {
-      min-height: 75px;
-      resize: vertical;
-    }
-
-    .main-button {
-      width: 100%;
-      padding: 15px;
-      border: none;
-      border-radius: 11px;
-      background: var(--gold);
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-    }
-
-    .note {
-      background: #faf4e9;
-      border-radius: 10px;
-      padding: 12px;
-      font-size: 13px;
-      margin-bottom: 15px;
-      line-height: 1.5;
-    }
-
-    .cart-badge {
-      display: inline-block;
-      background: var(--gold);
-      color: white;
-      padding: 4px 9px;
-      border-radius: 20px;
-      font-size: 13px;
-      margin-left: 5px;
-    }
-
-    .footer {
-      text-align: center;
-      color: #8a8175;
-      font-size: 12px;
-      padding: 15px;
-    }
-
-    @media (max-width: 360px) {
-      .products {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+<style>
+:root {
+  --gold:#916718;
+  --dark-gold:#795712;
+  --cream:#f8f3e9;
+  --white:#fff;
+  --text:#29251f;
+  --muted:#81796d;
+  --border:#e9dfce;
+  --shadow:0 5px 20px rgba(65,45,15,.08);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--cream);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+header{
+  background:var(--gold);
+  color:white;
+  padding:19px 16px;
+  text-align:center;
+  box-shadow:var(--shadow);
+}
+.logo{
+  font-size:24px;
+  font-weight:900;
+  letter-spacing:2px;
+}
+.header-sub{
+  font-size:11px;
+  letter-spacing:3px;
+  margin-top:5px;
+  opacity:.85;
+}
+.container{
+  max-width:760px;
+  margin:auto;
+  padding:20px 15px 115px;
+}
+.screen-title{
+  font-size:23px;
+  font-weight:800;
+  margin:8px 0;
+}
+.subtitle{
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.5;
+  margin:7px 0 20px;
+}
+.card{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:17px;
+  padding:17px;
+  margin-bottom:13px;
+  box-shadow:var(--shadow);
+}
+.primary{
+  width:100%;
+  border:0;
+  background:var(--gold);
+  color:white;
+  padding:15px;
+  border-radius:13px;
+  font-weight:800;
+  font-size:16px;
+}
+.primary:active{background:var(--dark-gold)}
+.secondary{
+  width:100%;
+  border:1px solid var(--gold);
+  color:var(--gold);
+  background:white;
+  padding:13px;
+  border-radius:12px;
+  font-weight:700;
+}
+.lang-buttons{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:25px;
+}
+.lang-button{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:23px 10px;
+  font-size:18px;
+  font-weight:800;
+  color:var(--text);
+}
+.lang-button span{
+  display:block;
+  font-size:29px;
+  margin-bottom:8px;
+}
+.zone-placeholder{
+  min-height:190px;
+  background:#eee5d5;
+  border:2px dashed #c8ae7b;
+  border-radius:16px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  color:var(--gold);
+  padding:20px;
+  margin:16px 0;
+}
+.zone-placeholder .symbol{font-size:45px}
+.zone-placeholder strong{font-size:16px;margin-top:8px}
+.notice{
+  background:#fffaf0;
+  border-left:4px solid var(--gold);
+  padding:15px;
+  border-radius:10px;
+  font-size:14px;
+  line-height:1.6;
+  margin:15px 0;
+}
+.branch-card{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  cursor:pointer;
+  transition:.15s;
+}
+.branch-icon{
+  width:48px;
+  height:48px;
+  border-radius:13px;
+  background:#f4ead7;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  flex-shrink:0;
+}
+.branch-info{flex:1}
+.branch-name{font-weight:800;font-size:15px}
+.branch-address{font-size:13px;color:var(--muted);margin-top:5px}
+.arrow{color:var(--gold);font-size:24px}
+.topline{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:15px;
+}
+.back{
+  border:0;
+  background:transparent;
+  color:var(--gold);
+  font-weight:800;
+  padding:8px 0;
+}
+.category-bar{
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:5px 0 13px;
+  position:sticky;
+  top:0;
+  background:var(--cream);
+  z-index:5;
+}
+.category-button{
+  white-space:nowrap;
+  border:1px solid var(--border);
+  background:white;
+  color:var(--text);
+  border-radius:30px;
+  padding:10px 14px;
+  font-size:13px;
+  font-weight:700;
+}
+.category-button.active{
+  background:var(--gold);
+  color:white;
+  border-color:var(--gold);
+}
+.product-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:13px;
+}
+.product-image{
+  width:75px;
+  height:75px;
+  flex-shrink:0;
+  border-radius:13px;
+  background:#f5efe4;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  font-size:32px;
+}
+.product-image img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.product-info{flex:1;min-width:0}
+.product-name{font-size:15px;font-weight:800}
+.product-description{
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.4;
+  margin-top:4px;
+}
+.product-price{
+  color:var(--gold);
+  font-weight:900;
+  margin-top:7px;
+}
+.quantity{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  flex-shrink:0;
+}
+.qty-button{
+  width:31px;
+  height:31px;
+  border:0;
+  border-radius:9px;
+  background:var(--gold);
+  color:white;
+  font-size:20px;
+  font-weight:700;
+}
+.qty-number{
+  min-width:15px;
+  text-align:center;
+  font-weight:800;
+}
+.bottom-cart{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:12px 15px calc(12px + env(safe-area-inset-bottom));
+  background:rgba(248,243,233,.97);
+  border-top:1px solid var(--border);
+  z-index:20;
+}
+.bottom-cart-inner{
+  max-width:730px;
+  margin:auto;
+}
+.cart-button{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  background:var(--gold);
+  color:white;
+  border:0;
+  width:100%;
+  padding:15px 17px;
+  border-radius:14px;
+  font-weight:800;
+}
+.cart-count{
+  background:white;
+  color:var(--gold);
+  border-radius:9px;
+  padding:5px 9px;
+}
+.field{margin:13px 0}
+.field label{
+  display:block;
+  font-size:13px;
+  font-weight:800;
+  margin-bottom:7px;
+}
+.field input,.field textarea{
+  width:100%;
+  padding:14px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:white;
+  outline:none;
+  color:var(--text);
+}
+.field textarea{min-height:85px;resize:vertical}
+.field input:focus,.field textarea:focus{border-color:var(--gold)}
+.cart-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 0;
+  border-bottom:1px solid var(--border);
+  font-size:14px;
+}
+.total-row{
+  display:flex;
+  justify-content:space-between;
+  font-size:19px;
+  font-weight:900;
+  padding:17px 0;
+}
+.empty{
+  text-align:center;
+  color:var(--muted);
+  padding:35px 10px;
+}
+.error{
+  background:#fff0ed;
+  color:#a32c20;
+  padding:12px;
+  border-radius:10px;
+  font-size:13px;
+  margin:10px 0;
+}
+.loading{
+  text-align:center;
+  padding:35px;
+  color:var(--muted);
+}
+footer{
+  text-align:center;
+  color:var(--muted);
+  font-size:11px;
+  padding:25px 10px;
+}
+</style>
 </head>
 
 <body>
 
-  <header class="header">
-    <div class="logo">TOMCHI PREMIUM</div>
-    <div class="header-subtitle" id="headerSubtitle">
-      Вкус, который хочется повторить
-    </div>
-  </header>
+<header>
+  <div class="logo">TOMCHI PREMIUM</div>
+  <div class="header-sub">ВОСТОЧНАЯ КУХНЯ</div>
+</header>
+
+<main class="container">
 
   <!-- ВЫБОР ЯЗЫКА -->
-  <div class="language-screen" id="languageScreen">
-    <h1>TOMCHI PREMIUM</h1>
-    <p>Выберите язык / Тілді таңдаңыз</p>
-
-    <div class="language-buttons">
-      <button onclick="setLanguage('ru')">Русский</button>
-      <button onclick="setLanguage('kz')">Қазақша</button>
+  <section id="languageScreen">
+    <div style="text-align:center;padding-top:55px">
+      <div style="font-size:48px">🍽️</div>
+      <h1 class="screen-title">Добро пожаловать!</h1>
+      <p class="subtitle">Выберите язык / Тілді таңдаңыз</p>
     </div>
+    <div class="lang-buttons">
+      <button class="lang-button" onclick="chooseLanguage('ru')">
+        <span>🇷🇺</span>Русский
+      </button>
+      <button class="lang-button" onclick="chooseLanguage('kk')">
+        <span>🇰🇿</span>Қазақша
+      </button>
+    </div>
+  </section>
+
+  <!-- ЗОНА ДОСТАВКИ -->
+  <section id="zoneScreen" class="hidden">
+    <div class="topline">
+      <button class="back" onclick="goTo('languageScreen')">← <span data-t="back">Назад</span></button>
+      <span>01 / 04</span>
+    </div>
+
+    <h2 class="screen-title" data-t="zoneTitle">Зона доставки</h2>
+    <p class="subtitle" data-t="zoneSubtitle">Ознакомьтесь с нашей зоной бесплатной доставки.</p>
+
+    <div class="zone-placeholder">
+      <div class="symbol">📍</div>
+      <strong data-t="photoLater">Фотография зоны доставки появится здесь</strong>
+      <span style="font-size:12px;margin-top:7px" data-t="photoLaterSub">Скоро добавим карту нашей зоны</span>
+    </div>
+
+    <div class="notice">
+      <strong data-t="freeTitle">Наша зона — бесплатная доставка.</strong>
+      <p data-t="freeText" style="margin-bottom:0">
+        Если ваш адрес не входит в нашу зону, вы самостоятельно вызываете курьера через Яндекс Go или inDrive и оплачиваете его услуги.
+      </p>
+    </div>
+
+    <button class="primary" onclick="loadBranches()" data-t="continue">Продолжить</button>
+  </section>
+
+  <!-- ФИЛИАЛЫ -->
+  <section id="branchesScreen" class="hidden">
+    <div class="topline">
+      <button class="back" onclick="goTo('zoneScreen')">← <span data-t="back">Назад</span></button>
+      <span>02 / 04</span>
+    </div>
+
+    <h2 class="screen-title" data-t="branchTitle">Выберите филиал</h2>
+    <p class="subtitle" data-t="branchSubtitle">Выберите удобный для вас филиал.</p>
+
+    <div id="branchesList">
+      <div class="loading">Загрузка филиалов...</div>
+    </div>
+  </section>
+
+  <!-- МЕНЮ -->
+  <section id="menuScreen" class="hidden">
+    <div class="topline">
+      <button class="back" onclick="goTo('branchesScreen')">← <span data-t="branches">Филиалы</span></button>
+      <span>03 / 04</span>
+    </div>
+
+    <div class="card" style="padding:12px 15px">
+      <div style="font-size:11px;color:var(--muted)" data-t="yourBranch">ВАШ ФИЛИАЛ</div>
+      <strong id="selectedBranchName"></strong>
+    </div>
+
+    <h2 class="screen-title" data-t="menuTitle">Наше меню</h2>
+    <p class="subtitle" data-t="menuSubtitle">Выберите любимые блюда.</p>
+
+    <div id="categoryBar" class="category-bar"></div>
+    <div id="productsList"><div class="loading">Загрузка меню...</div></div>
+  </section>
+
+  <!-- КОРЗИНА И ОФОРМЛЕНИЕ -->
+  <section id="checkoutScreen" class="hidden">
+    <div class="topline">
+      <button class="back" onclick="goTo('menuScreen')">← <span data-t="backMenu">Вернуться в меню</span></button>
+      <span>04 / 04</span>
+    </div>
+
+    <h2 class="screen-title" data-t="cartTitle">Ваша корзина</h2>
+    <div class="card">
+      <div id="cartItems"></div>
+      <div class="total-row">
+        <span data-t="total">Итого</span>
+        <span id="cartTotal">0 ₸</span>
+      </div>
+    </div>
+
+    <h2 class="screen-title" data-t="deliveryDetails">Данные доставки</h2>
+    <p class="subtitle" data-t="deliverySubtitle">Укажите ваши данные для оформления заказа.</p>
+
+    <div class="card">
+      <div class="field">
+        <label data-t="nameLabel">Ваше имя *</label>
+        <input id="customerName" autocomplete="name" placeholder="Имя">
+      </div>
+      <div class="field">
+        <label data-t="phoneLabel">Номер телефона *</label>
+        <input id="customerPhone" type="tel" autocomplete="tel" placeholder="+7 777 123 45 67">
+      </div>
+      <div class="field">
+        <label data-t="addressLabel">Адрес доставки *</label>
+        <input id="customerAddress" autocomplete="street-address" placeholder="Улица, дом, квартира">
+      </div>
+      <div class="field">
+        <label data-t="commentLabel">Комментарий к заказу</label>
+        <textarea id="customerComment" placeholder="Подъезд, этаж, пожелания..."></textarea>
+      </div>
+      <div class="notice" data-t="courierReminder">
+        Если ваш адрес находится за пределами нашей бесплатной зоны, вызов и оплата стороннего курьера — за ваш счёт.
+      </div>
+      <div id="checkoutError"></div>
+      <button class="primary" id="sendOrderButton" onclick="sendOrder()" data-t="sendWhatsApp">
+        Отправить заказ в WhatsApp
+      </button>
+    </div>
+  </section>
+
+</main>
+
+<!-- КОРЗИНА ВНИЗУ -->
+<div id="bottomCart" class="bottom-cart hidden">
+  <div class="bottom-cart-inner">
+    <button class="cart-button" onclick="openCheckout()">
+      <span>🛒 <span data-t="cartButton">Корзина</span> <span class="cart-count" id="bottomCount">0</span></span>
+      <span id="bottomTotal">0 ₸　→</span>
+    </button>
   </div>
+</div>
 
-  <!-- ОСНОВНОЙ САЙТ -->
-  <main class="container" id="mainSite" style="display:none;">
+<footer>TOMCHI PREMIUM © 2026</footer>
 
-    <!-- ЗОНА ДОСТАВКИ -->
-    <section class="section">
-      <h2 id="zoneTitle">Зона доставки</h2>
-      <p id="zoneText">
-        Посмотрите нашу зону бесплатной доставки.
-      </p>
+<script>
+const WHATSAPP_NUMBER = "77479370909";
 
-      <img
-        class="zone-image"
-        src="/images/delivery-zone.jpg"
-        alt="Зона доставки Tomchi Premium"
-        onerror="this.style.display='none'; document.getElementById('zoneImageError').style.display='block';"
-      >
+const translations = {
+  ru: {
+    back:"Назад",
+    zoneTitle:"Зона доставки",
+    zoneSubtitle:"Ознакомьтесь с нашей зоной бесплатной доставки.",
+    photoLater:"Фотография зоны доставки появится здесь",
+    photoLaterSub:"Скоро добавим карту нашей зоны",
+    freeTitle:"Наша зона — бесплатная доставка.",
+    freeText:"Если ваш адрес не входит в нашу зону, вы самостоятельно вызываете курьера через Яндекс Go или inDrive и оплачиваете его услуги.",
+    continue:"Продолжить",
+    branchTitle:"Выберите филиал",
+    branchSubtitle:"Выберите удобный для вас филиал.",
+    branches:"Филиалы",
+    yourBranch:"ВАШ ФИЛИАЛ",
+    menuTitle:"Наше меню",
+    menuSubtitle:"Выберите любимые блюда.",
+    backMenu:"Вернуться в меню",
+    cartTitle:"Ваша корзина",
+    total:"Итого",
+    deliveryDetails:"Данные доставки",
+    deliverySubtitle:"Укажите ваши данные для оформления заказа.",
+    nameLabel:"Ваше имя *",
+    phoneLabel:"Номер телефона *",
+    addressLabel:"Адрес доставки *",
+    commentLabel:"Комментарий к заказу",
+    courierReminder:"Если ваш адрес находится за пределами нашей бесплатной зоны, вызов и оплата стороннего курьера — за ваш счёт.",
+    sendWhatsApp:"Отправить заказ в WhatsApp",
+    cartButton:"Корзина",
+    emptyCart:"Ваша корзина пока пуста.",
+    loading:"Загрузка...",
+    add:"Добавить",
+    choose:"Выбрать",
+    order:"ЗАКАЗ TOMCHI PREMIUM",
+    branch:"Филиал",
+    customer:"Клиент",
+    phone:"Телефон",
+    address:"Адрес",
+    comment:"Комментарий",
+    errorName:"Введите ваше имя.",
+    errorPhone:"Введите номер телефона.",
+    errorAddress:"Введите адрес доставки.",
+    errorCart:"Добавьте блюда в корзину.",
+    errorMenu:"Не удалось загрузить меню. Обновите страницу.",
+    errorBranches:"Не удалось загрузить филиалы. Обновите страницу.",
+    sending:"Отправляем...",
+    orderSuccess:"Заказ сохранён. Сейчас откроется WhatsApp.",
+    noProducts:"В этой категории пока нет блюд."
+  },
+  kk: {
+    back:"Артқа",
+    zoneTitle:"Жеткізу аймағы",
+    zoneSubtitle:"Тегін жеткізу аймағымызбен танысыңыз.",
+    photoLater:"Жеткізу аймағының суреті осында болады",
+    photoLaterSub:"Карта жақында қосылады",
+    freeTitle:"Біздің аймақта жеткізу тегін.",
+    freeText:"Егер мекенжайыңыз біздің аймаққа кірмесе, Яндекс Go немесе inDrive арқылы курьерді өзіңіз шақырып, ақысын өзіңіз төлейсіз.",
+    continue:"Жалғастыру",
+    branchTitle:"Филиалды таңдаңыз",
+    branchSubtitle:"Өзіңізге ыңғайлы филиалды таңдаңыз.",
+    branches:"Филиалдар",
+    yourBranch:"СІЗДІҢ ФИЛИАЛЫҢЫЗ",
+    menuTitle:"Біздің мәзір",
+    menuSubtitle:"Ұнаған тағамдарыңызды таңдаңыз.",
+    backMenu:"Мәзірге оралу",
+    cartTitle:"Сіздің себетіңіз",
+    total:"Барлығы",
+    deliveryDetails:"Жеткізу деректері",
+    deliverySubtitle:"Тапсырыс беру үшін деректеріңізді енгізіңіз.",
+    nameLabel:"Атыңыз *",
+    phoneLabel:"Телефон нөмірі *",
+    addressLabel:"Жеткізу мекенжайы *",
+    commentLabel:"Тапсырысқа түсініктеме",
+    courierReminder:"Егер мекенжайыңыз тегін жеткізу аймағынан тыс болса, курьерді шақыру және төлеу өз есебіңізден.",
+    sendWhatsApp:"WhatsApp арқылы тапсырыс беру",
+    cartButton:"Себет",
+    emptyCart:"Себетіңіз әзірге бос.",
+    loading:"Жүктелуде...",
+    add:"Қосу",
+    choose:"Таңдау",
+    order:"TOMCHI PREMIUM ТАПСЫРЫСЫ",
+    branch:"Филиал",
+    customer:"Клиент",
+    phone:"Телефон",
+    address:"Мекенжай",
+    comment:"Түсініктеме",
+    errorName:"Атыңызды енгізіңіз.",
+    errorPhone:"Телефон нөмірін енгізіңіз.",
+    errorAddress:"Жеткізу мекенжайын енгізіңіз.",
+    errorCart:"Себетке тағам қосыңыз.",
+    errorMenu:"Мәзір жүктелмеді. Бетті жаңартыңыз.",
+    errorBranches:"Филиалдар жүктелмеді. Бетті жаңартыңыз.",
+    sending:"Жіберілуде...",
+    orderSuccess:"Тапсырыс сақталды. WhatsApp ашылады.",
+    noProducts:"Бұл санатта әзірге тағам жоқ."
+  }
+};
 
-      <p id="zoneImageError" style="display:none;color:#b33;margin-top:10px;">
-        Фото зоны доставки пока не загружено.
-      </p>
+let lang = "ru";
+let branches = [];
+let categories = [];
+let products = [];
+let selectedBranch = null;
+let selectedCategory = "all";
+let cart = {};
 
-      <p class="delivery-hours" id="deliveryHours">
-        Доставка: 11:00–23:00
-      </p>
-    </section>
+function t(key){
+  return translations[lang][key] || translations.ru[key] || key;
+}
 
-    <!-- МЕНЮ -->
-    <section class="section">
-      <h2 id="menuTitle">Наше меню</h2>
-      <div class="categories" id="categories"></div>
-      <div class="products" id="menu"></div>
-    </section>
+function chooseLanguage(language){
+  lang = language;
+  document.documentElement.lang = language === "kk" ? "kk" : "ru";
+  applyTranslations();
+  goTo("zoneScreen");
+}
 
-    <!-- КОРЗИНА -->
-    <section class="section" id="cartSection">
-      <h2>
-        <span id="cartTitle">Корзина</span>
-        <span class="cart-badge" id="cartCount">0</span>
-      </h2>
+function applyTranslations(){
+  document.querySelectorAll("[data-t]").forEach(el=>{
+    const key = el.getAttribute("data-t");
+    if(translations[lang][key]) el.textContent = translations[lang][key];
+  });
+}
 
-      <div id="cartItems">
-        <p class="empty-cart" id="emptyCart">Корзина пока пустая</p>
+function goTo(id){
+  document.querySelectorAll("main section").forEach(section=>{
+    section.classList.add("hidden");
+  });
+  document.getElementById(id).classList.remove("hidden");
+
+  const showCart = id === "menuScreen" && cartCount() > 0;
+  document.getElementById("bottomCart").classList.toggle("hidden", id !== "menuScreen");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+async function api(url, options={}){
+  const response = await fetch(url,{
+    ...options,
+    headers:{
+      "Content-Type":"application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json().catch(()=>({}));
+  if(!response.ok) throw new Error(data.error || "Ошибка сервера");
+  return data;
+}
+
+async function loadBranches(){
+  goTo("branchesScreen");
+  const list = document.getElementById("branchesList");
+  list.innerHTML = `<div class="loading">${t("loading")}</div>`;
+
+  try{
+    const config = await api("/api/config");
+    branches = config.pickupPoints || [];
+
+    if(!branches.length) throw new Error(t("errorBranches"));
+
+    list.innerHTML = branches.map(branch=>`
+      <div class="card branch-card" onclick="selectBranch(${Number(branch.id)})">
+        <div class="branch-icon">🏪</div>
+        <div class="branch-info">
+          <div class="branch-name">${escapeHTML(branch.name)}</div>
+          <div class="branch-address">📍 ${escapeHTML(branch.address || "")}</div>
+          <div class="branch-address">🕒 ${escapeHTML(branch.workTime || "")}</div>
+        </div>
+        <div class="arrow">›</div>
       </div>
+    `).join("");
+  }catch(error){
+    list.innerHTML = `<div class="error">${escapeHTML(error.message)}</div>`;
+  }
+}
 
-      <div class="total">
-        <span id="totalLabel">Итого:</span>
-        <span id="totalPrice">0 ₸</span>
+async function selectBranch(id){
+  selectedBranch = branches.find(b=>Number(b.id)===Number(id));
+  if(!selectedBranch) return;
+
+  document.getElementById("selectedBranchName").textContent = selectedBranch.name;
+  goTo("menuScreen");
+  document.getElementById("productsList").innerHTML = `<div class="loading">${t("loading")}</div>`;
+  document.getElementById("categoryBar").innerHTML = "";
+
+  try{
+    const data = await api("/api/menu?branchId="+encodeURIComponent(id));
+    categories = data.categories || [];
+    products = data.products || [];
+    selectedCategory = "all";
+    renderCategories();
+    renderProducts();
+    updateCart();
+  }catch(error){
+    document.getElementById("productsList").innerHTML =
+      `<div class="error">${escapeHTML(error.message || t("errorMenu"))}</div>`;
+  }
+}
+
+function renderCategories(){
+  const bar = document.getElementById("categoryBar");
+  bar.innerHTML = `
+    <button class="category-button active" data-category="all" onclick="chooseCategory('all')">
+      ${lang==="kk"?"Барлығы":"Все"}
+    </button>
+  ` + categories.map(category=>`
+    <button class="category-button" data-category="${escapeHTML(category.id)}" onclick="chooseCategory('${escapeJS(category.id)}')">
+      ${escapeHTML(category.emoji || "🍽️")} ${escapeHTML(category.name)}
+    </button>
+  `).join("");
+}
+
+function chooseCategory(id){
+  selectedCategory = id;
+  document.querySelectorAll(".category-button").forEach(button=>{
+    button.classList.toggle("active",button.dataset.category===id);
+  });
+  renderProducts();
+}
+
+function renderProducts(){
+  const list = document.getElementById("productsList");
+  const filtered = products.filter(p=>
+    selectedCategory==="all" || p.categoryId===selectedCategory
+  );
+
+  if(!filtered.length){
+    list.innerHTML = `<div class="empty">${t("noProducts")}</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(product=>{
+    const quantity = Number(cart[product.id] || 0);
+    const image = product.image
+      ? `<img src="${escapeHTML(product.image)}" alt="" onerror="this.style.display='none'">`
+      : escapeHTML(product.emoji || "🍽️");
+
+    return `
+      <div class="card product-card">
+        <div class="product-image">${image}</div>
+        <div class="product-info">
+          <div class="product-name">${escapeHTML(product.name)}</div>
+          ${product.description ? `<div class="product-description">${escapeHTML(product.description)}</div>` : ""}
+          <div class="product-price">${formatPrice(product.price)} ₸</div>
+        </div>
+        <div class="quantity">
+          <button class="qty-button" onclick="changeQuantity('${escapeJS(product.id)}',-1)">−</button>
+          <span class="qty-number">${quantity}</span>
+          <button class="qty-button" onclick="changeQuantity('${escapeJS(product.id)}',1)">+</button>
+        </div>
       </div>
-    </section>
+    `;
+  }).join("");
+}
 
-    <!-- ОФОРМЛЕНИЕ -->
-    <section class="section">
-      <h2 id="orderTitle">Оформление заказа</h2>
+function changeQuantity(id,change){
+  const current = Number(cart[id] || 0);
+  const next = Math.max(0,Math.min(99,current+change));
 
-      <div class="note" id="paymentNote">
-        Заполните данные и отправьте заказ через WhatsApp.
-      </div>
+  if(next===0) delete cart[id];
+  else cart[id]=next;
 
-      <form id="orderForm">
+  renderProducts();
+  updateCart();
+}
 
-        <div class="form-group">
-          <label id="nameLabel" for="customerName">Ваше имя</label>
-          <input
-            id="customerName"
-            type="text"
-            required
-            placeholder="Имя"
-          >
-        </div>
+function cartCount(){
+  return Object.values(cart).reduce((sum,qty)=>sum+Number(qty),0);
+}
 
-        <div class="form-group">
-          <label id="phoneLabel" for="customerPhone">Номер телефона</label>
-          <input
-            id="customerPhone"
-            type="tel"
-            required
-            placeholder="+7 777 000 00 00"
-          >
-        </div>
+function cartTotal(){
+  return products.reduce((sum,p)=>{
+    return sum + Number(p.price || 0)*Number(cart[p.id] || 0);
+  },0);
+}
 
-        <div class="form-group">
-          <label id="addressLabel" for="customerAddress">Адрес доставки</label>
-          <input
-            id="customerAddress"
-            type="text"
-            required
-            placeholder="Улица, дом, квартира"
-          >
-        </div>
+function formatPrice(value){
+  return Number(value || 0).toLocaleString("ru-RU");
+}
 
-        <div class="form-group">
-          <label id="commentLabel" for="customerComment">Комментарий</label>
-          <textarea
-            id="customerComment"
-            placeholder="Подъезд, этаж и другие пожелания"
-          ></textarea>
-        </div>
+function updateCart(){
+  const count = cartCount();
+  const total = cartTotal();
 
-        <button class="main-button" type="submit" id="sendButton">
-          Отправить заказ в WhatsApp
-        </button>
+  document.getElementById("bottomCount").textContent = count;
+  document.getElementById("bottomTotal").textContent = formatPrice(total)+" ₸　→";
+  document.getElementById("bottomCart").classList.toggle("hidden",
+    document.getElementById("menuScreen").classList.contains("hidden")
+  );
+}
 
-      </form>
-    </section>
+function openCheckout(){
+  if(!cartCount()){
+    alert(t("errorCart"));
+    return;
+  }
 
-  </main>
+  renderCheckoutCart();
+  goTo("checkoutScreen");
+}
 
-  <footer class="footer">
-    TOMCHI PREMIUM
-  </footer>
+function renderCheckoutCart(){
+  const chosen = products.filter(p=>Number(cart[p.id] || 0)>0);
+  const container = document.getElementById("cartItems");
 
-  <script>
-    // =====================================
-    // НАСТРОЙКИ
-    // =====================================
-
-    // Проверь номер WhatsApp перед запуском.
-    // Укажи номер без плюса, пробелов и скобок.
-    const WHATSAPP_NUMBER = "77479370909";
-
-    let currentLanguage = "ru";
-    let selectedCategory = "all";
-    let cart = {};
-
-    // =====================================
-    // МЕНЮ
-    // =====================================
-
-    const products = [
-      {
-        id: 1,
-        category: "burgers",
-        emoji: "🍔",
-        price: 1800,
-        ru: "Чизбургер куриный",
-        kz: "Тауық чизбургері"
-      },
-      {
-        id: 2,
-        category: "burgers",
-        emoji: "🍔",
-        price: 2000,
-        ru: "Чизбургер говяжий",
-        kz: "Сиыр етінен чизбургер"
-      },
-      {
-        id: 3,
-        category: "burgers",
-        emoji: "🍔",
-        price: 2200,
-        ru: "Чизбургер ассорти",
-        kz: "Ассорти чизбургер"
-      },
-      {
-        id: 4,
-        category: "pizza",
-        emoji: "🍕",
-        price: 3500,
-        ru: "Пицца 4 сезона",
-        kz: "4 маусым пиццасы"
-      },
-      {
-        id: 5,
-        category: "pizza",
-        emoji: "🍕",
-        price: 3000,
-        ru: "Пицца куриная",
-        kz: "Тауық еті қосылған пицца"
-      },
-      {
-        id: 6,
-        category: "pizza",
-        emoji: "🍕",
-        price: 2500,
-        ru: "Маргарита",
-        kz: "Маргарита"
-      },
-      {
-        id: 7,
-        category: "pizza",
-        emoji: "🍕",
-        price: 3000,
-        ru: "Пепперони",
-        kz: "Пепперони"
-      },
-      {
-        id: 8,
-        category: "pizza",
-        emoji: "🍕",
-        price: 3500,
-        ru: "Пицца донер",
-        kz: "Донер пицца"
-      },
-      {
-        id: 9,
-        category: "other",
-        emoji: "🍚",
-        price: 1800,
-        ru: "Плов",
-        kz: "Палау"
-      },
-      {
-        id: 10,
-        category: "other",
-        emoji: "🥟",
-        price: 1800,
-        ru: "Манты",
-        kz: "Мәнті"
-      },
-      {
-        id: 11,
-        category: "other",
-        emoji: "🍜",
-        price: 1800,
-        ru: "Лагман",
-        kz: "Лағман"
-      }
-    ];
-
-    // =====================================
-    // ПЕРЕВОДЫ
-    // =====================================
-
-    const translations = {
-      ru: {
-        subtitle: "Вкус, который хочется повторить",
-        zoneTitle: "Зона доставки",
-        zoneText: "Посмотрите нашу зону бесплатной доставки.",
-        zoneError: "Фото зоны доставки пока не загружено.",
-        hours: "Доставка: 11:00–23:00",
-        menuTitle: "Наше меню",
-        all: "Все",
-        burgers: "Бургеры",
-        pizza: "Пицца",
-        other: "Остальное",
-        add: "Добавить",
-        cart: "Корзина",
-        empty: "Корзина пока пустая",
-        total: "Итого:",
-        order: "Оформление заказа",
-        payment: "Заполните данные и отправьте заказ через WhatsApp.",
-        name: "Ваше имя",
-        phone: "Номер телефона",
-        address: "Адрес доставки",
-        comment: "Комментарий",
-        send: "Отправить заказ в WhatsApp",
-        namePlaceholder: "Имя",
-        addressPlaceholder: "Улица, дом, квартира",
-        commentPlaceholder: "Подъезд, этаж и другие пожелания",
-        noProducts: "Сначала добавьте товары в корзину.",
-        orderMessage: "НОВЫЙ ЗАКАЗ — TOMCHI PREMIUM",
-        customer: "Клиент",
-        customerPhone: "Телефон",
-        deliveryAddress: "Адрес",
-        commentText: "Комментарий",
-        items: "Заказ",
-        quantity: "шт.",
-        orderTotal: "ИТОГО"
-      },
-
-      kz: {
-        subtitle: "Қайта жегің келетін дәм",
-        zoneTitle: "Жеткізу аймағы",
-        zoneText: "Тегін жеткізу аймағын қарап шығыңыз.",
-        zoneError: "Жеткізу аймағының суреті әлі жүктелмеген.",
-        hours: "Жеткізу уақыты: 11:00–23:00",
-        menuTitle: "Біздің мәзір",
-        all: "Барлығы",
-        burgers: "Бургерлер",
-        pizza: "Пицца",
-        other: "Басқалары",
-        add: "Қосу",
-        cart: "Себет",
-        empty: "Себет әзірге бос",
-        total: "Жалпы:",
-        order: "Тапсырысты рәсімдеу",
-        payment: "Мәліметтерді толтырып, WhatsApp арқылы тапсырыс жіберіңіз.",
-        name: "Атыңыз",
-        phone: "Телефон нөмірі",
-        address: "Жеткізу мекенжайы",
-        comment: "Пікір",
-        send: "WhatsApp арқылы тапсырыс беру",
-        namePlaceholder: "Атыңыз",
-        addressPlaceholder: "Көше, үй, пәтер",
-        commentPlaceholder: "Подъезд, қабат және басқа тілектер",
-        noProducts: "Алдымен себетке тауар қосыңыз.",
-        orderMessage: "ЖАҢА ТАПСЫРЫС — TOMCHI PREMIUM",
-        customer: "Клиент",
-        customerPhone: "Телефон",
-        deliveryAddress: "Мекенжай",
-        commentText: "Пікір",
-        items: "Тапсырыс",
-        quantity: "дана",
-        orderTotal: "ЖАЛПЫ"
-      }
-    };
-
-    function t(key) {
-      return translations[currentLanguage][key];
-    }
-
-    // =====================================
-    // ТІЛДІ ТАҢДАУ
-    // =====================================
-
-    function setLanguage(language) {
-      currentLanguage = language;
-
-      document.getElementById("languageScreen").style.display = "none";
-      document.getElementById("mainSite").style.display = "block";
-
-      document.getElementById("headerSubtitle").textContent = t("subtitle");
-      document.getElementById("zoneTitle").textContent = t("zoneTitle");
-      document.getElementById("zoneText").textContent = t("zoneText");
-      document.getElementById("zoneImageError").textContent = t("zoneError");
-      document.getElementById("deliveryHours").textContent = t("hours");
-      document.getElementById("menuTitle").textContent = t("menuTitle");
-      document.getElementById("cartTitle").textContent = t("cart");
-      document.getElementById("orderTitle").textContent = t("order");
-      document.getElementById("paymentNote").textContent = t("payment");
-      document.getElementById("nameLabel").textContent = t("name");
-      document.getElementById("phoneLabel").textContent = t("phone");
-      document.getElementById("addressLabel").textContent = t("address");
-      document.getElementById("commentLabel").textContent = t("comment");
-      document.getElementById("sendButton").textContent = t("send");
-      document.getElementById("customerName").placeholder = t("namePlaceholder");
-      document.getElementById("customerAddress").placeholder = t("addressPlaceholder");
-      document.getElementById("customerComment").placeholder = t("commentPlaceholder");
-
-      renderCategories();
-      renderMenu();
-      renderCart();
-
-      window.scrollTo(0, 0);
-    }
-
-    // =====================================
-    // КАТЕГОРИИ
-    // =====================================
-
-    function renderCategories() {
-      const categories = [
-        { id: "all", name: t("all") },
-        { id: "burgers", name: t("burgers") },
-        { id: "pizza", name: t("pizza") },
-        { id: "other", name: t("other") }
-      ];
-
-      document.getElementById("categories").innerHTML =
-        categories.map(category => `
-          <button
-            class="category-btn ${selectedCategory === category.id ? "active" : ""}"
-            onclick="selectCategory('${category.id}')"
-          >
-            ${category.name}
-          </button>
-        `).join("");
-    }
-
-    function selectCategory(category) {
-      selectedCategory = category;
-      renderCategories();
-      renderMenu();
-    }
-
-    // =====================================
-    // ОТОБРАЖЕНИЕ МЕНЮ
-    // =====================================
-
-    function renderMenu() {
-      const filtered = selectedCategory === "all"
-        ? products
-        : products.filter(product => product.category === selectedCategory);
-
-      document.getElementById("menu").innerHTML =
-        filtered.map(product => `
-          <div class="product">
-            <div class="product-photo">${product.emoji}</div>
-
-            <div class="product-info">
-              <div class="product-name">
-                ${product[currentLanguage]}
-              </div>
-
-              <div class="product-price">
-                ${product.price.toLocaleString("ru-RU")} ₸
-              </div>
-
-              <button
-                class="add-button"
-                onclick="addToCart(${product.id})"
-              >
-                ${t("add")}
-              </button>
+  if(!chosen.length){
+    container.innerHTML = `<div class="empty">${t("emptyCart")}</div>`;
+  }else{
+    container.innerHTML = chosen.map(p=>{
+      const qty = Number(cart[p.id]);
+      return `
+        <div class="cart-row">
+          <div>
+            <strong>${escapeHTML(p.name)}</strong>
+            <div style="color:var(--muted);margin-top:4px">
+              ${formatPrice(p.price)} ₸ × ${qty}
             </div>
           </div>
-        `).join("");
-    }
+          <strong>${formatPrice(p.price*qty)} ₸</strong>
+        </div>
+      `;
+    }).join("");
+  }
 
-    // =====================================
-    // КОРЗИНА
-    // =====================================
+  document.getElementById("cartTotal").textContent = formatPrice(cartTotal())+" ₸";
+}
 
-    function addToCart(id) {
-      cart[id] = (cart[id] || 0) + 1;
-      renderCart();
-    }
+async function sendOrder(){
+  const name = document.getElementById("customerName").value.trim();
+  const phone = document.getElementById("customerPhone").value.trim();
+  const address = document.getElementById("customerAddress").value.trim();
+  const comment = document.getElementById("customerComment").value.trim();
+  const errorBox = document.getElementById("checkoutError");
+  const button = document.getElementById("sendOrderButton");
 
-    function changeQuantity(id, amount) {
-      cart[id] = (cart[id] || 0) + amount;
+  errorBox.innerHTML = "";
 
-      if (cart[id] <= 0) {
-        delete cart[id];
-      }
+  if(!name) return showCheckoutError(t("errorName"));
+  if(!phone) return showCheckoutError(t("errorPhone"));
+  if(!address) return showCheckoutError(t("errorAddress"));
+  if(!cartCount()) return showCheckoutError(t("errorCart"));
+  if(!selectedBranch) return showCheckoutError(t("errorBranches"));
 
-      renderCart();
-    }
+  const items = products
+    .filter(p=>Number(cart[p.id] || 0)>0)
+    .map(p=>({id:p.id,quantity:Number(cart[p.id])}));
 
-    function getTotal() {
-      return products.reduce((sum, product) => {
-        return sum + product.price * (cart[product.id] || 0);
-      }, 0);
-    }
+  const amount = cartTotal();
 
-    function getCount() {
-      return Object.values(cart).reduce((sum, count) => sum + count, 0);
-    }
+  button.disabled = true;
+  button.textContent = t("sending");
 
-    function renderCart() {
-      const cartItems = document.getElementById("cartItems");
-      const selectedProducts = products.filter(product => cart[product.id] > 0);
-
-      document.getElementById("cartCount").textContent = getCount();
-
-      if (selectedProducts.length === 0) {
-        cartItems.innerHTML = `<p class="empty-cart">${t("empty")}</p>`;
-      } else {
-        cartItems.innerHTML = selectedProducts.map(product => `
-          <div class="cart-item">
-            <div>
-              <div class="cart-item-name">
-                ${product[currentLanguage]}
-              </div>
-              <div class="cart-item-price">
-                ${(product.price * cart[product.id]).toLocaleString("ru-RU")} ₸
-              </div>
-            </div>
-
-            <div class="quantity">
-              <button onclick="changeQuantity(${product.id}, -1)">−</button>
-              <span>${cart[product.id]}</span>
-              <button onclick="changeQuantity(${product.id}, 1)">+</button>
-            </div>
-          </div>
-        `).join("");
-      }
-
-      document.getElementById("totalPrice").textContent =
-        getTotal().toLocaleString("ru-RU") + " ₸";
-    }
-
-    // =====================================
-    // ПЕРЕЙТИ К КОРЗИНЕ
-    // =====================================
-
-    function goToCart() {
-      document.getElementById("cartSection").scrollIntoView({
-        behavior: "smooth"
-      });
-    }
-
-    // =====================================
-    // ОТПРАВКА ЗАКАЗА В WHATSAPP
-    // =====================================
-
-    document.getElementById("orderForm").addEventListener("submit", function(event) {
-      event.preventDefault();
-
-      if (getCount() === 0) {
-        alert(t("noProducts"));
-        goToCart();
-        return;
-      }
-
-      const name = document.getElementById("customerName").value.trim();
-      const phone = document.getElementById("customerPhone").value.trim();
-      const address = document.getElementById("customerAddress").value.trim();
-      const comment = document.getElementById("customerComment").value.trim();
-
-      let message = `${t("orderMessage")}\n\n`;
-
-      message += `${t("customer")}: ${name}\n`;
-      message += `${t("customerPhone")}: ${phone}\n`;
-      message += `${t("deliveryAddress")}: ${address}\n\n`;
-
-      message += `${t("items")}:\n`;
-
-      products.forEach(product => {
-        const count = cart[product.id] || 0;
-
-        if (count > 0) {
-          message += `• ${product[currentLanguage]} — ${count} ${t("quantity")} — ${(product.price * count).toLocaleString("ru-RU")} ₸\n`;
-        }
-      });
-
-      message += `\n${t("orderTotal")}: ${getTotal().toLocaleString("ru-RU")} ₸`;
-
-      if (comment) {
-        message += `\n\n${t("commentText")}: ${comment}`;
-      }
-
-      const whatsappURL =
-        "https://wa.me/" + WHATSAPP_NUMBER +
-        "?text=" + encodeURIComponent(message);
-
-      window.open(whatsappURL, "_blank");
+  try{
+    const order = await api("/api/orders",{
+      method:"POST",
+      body:JSON.stringify({
+        name,
+        phone,
+        pickup:selectedBranch.address,
+        branchId:selectedBranch.id,
+        address,
+        comment,
+        items,
+        amount,
+        checkDelivery:false
+      })
     });
-  </script>
+
+    const message = buildWhatsAppMessage({
+      orderId:order.id,
+      name,phone,address,comment,
+      items,amount
+    });
+
+    alert(t("orderSuccess"));
+    window.location.href =
+      "https://wa.me/"+WHATSAPP_NUMBER+"?text="+encodeURIComponent(message);
+
+  }catch(error){
+    showCheckoutError(error.message);
+    button.disabled = false;
+    button.textContent = t("sendWhatsApp");
+  }
+}
+
+function buildWhatsAppMessage(data){
+  const lines = [];
+  lines.push("🍽️ *"+t("order")+"*");
+  lines.push("━━━━━━━━━━━━━━");
+  lines.push("🧾 Заказ № "+data.orderId);
+  lines.push("🏪 "+t("branch")+": "+selectedBranch.name);
+  lines.push("");
+  lines.push("📋 *"+(lang==="kk"?"Таңдалған тағамдар":"Выбранные блюда")+"*");
+
+  data.items.forEach(item=>{
+    const product = products.find(p=>p.id===item.id);
+    if(product){
+      lines.push("• "+product.name+" × "+item.quantity+" — "+
+        formatPrice(product.price*item.quantity)+" ₸");
+    }
+  });
+
+  lines.push("");
+  lines.push("💰 *"+t("total")+": "+formatPrice(data.amount)+" ₸*");
+  lines.push("");
+  lines.push("👤 "+t("customer")+": "+data.name);
+  lines.push("📞 "+t("phone")+": "+data.phone);
+  lines.push("📍 "+t("address")+": "+data.address);
+
+  if(data.comment) lines.push("💬 "+t("comment")+": "+data.comment);
+
+  lines.push("");
+  lines.push("TOMCHI PREMIUM");
+
+  return lines.join("\n");
+}
+
+function showCheckoutError(message){
+  document.getElementById("checkoutError").innerHTML =
+    `<div class="error">${escapeHTML(message)}</div>`;
+}
+
+function escapeHTML(value){
+  return String(value ?? "").replace(/[&<>"']/g,char=>({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  }[char]));
+}
+
+function escapeJS(value){
+  return String(value ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+}
+</script>
 
 </body>
 </html>
