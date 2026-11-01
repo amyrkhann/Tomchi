@@ -1099,3 +1099,17 @@ fs.readFile(full, (err, content) => {
 
   res.end(content);
 });
+  } catch (error) {
+    console.error(error);
+
+    if (!res.headersSent) {
+      json(res, 500, {
+        error: error.message || "Внутренняя ошибка сервера"
+      });
+    }
+  }
+});
+
+server.listen(PORT, () => {
+  console.log(`Tomchi Premium запущен на порту ${PORT}`);
+});
