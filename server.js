@@ -206,6 +206,7 @@ function initialData() {
   return {
     nextOrderId: 1001,
     siteOpen: true,
+    siteMessage: "",
     pickupPoints: DEFAULT_BRANCHES,
     orders: [],
     menu: makeSeedMenu()
@@ -232,6 +233,10 @@ function read() {
 
   if (typeof data.siteOpen !== "boolean") {
     data.siteOpen = true;
+  }
+
+  if (typeof data.siteMessage !== "string") {
+    data.siteMessage = "";
   }
 
   if (
@@ -401,7 +406,8 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, {
         pickupPoints: data.pickupPoints,
         deliveryHours: "11:00-23:00",
-        siteOpen: data.siteOpen !== false
+        siteOpen: data.siteOpen !== false,
+        siteMessage: data.siteMessage || ""
       });
     }
 
@@ -414,14 +420,18 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
-    // СОЗДАНИЕ ЗАКАЗА БЕЗ ПРОВЕРКИ АДРЕСА И 2GIS
+    // СОЗДАНИЕ ЗАКАЗА
     if (pathname === "/api/orders" && method === "POST") {
       const body = await getBody(req);
       const data = read();
 
       if (data.siteOpen === false) {
+        const message = String(data.siteMessage || "").trim() ||
+          "Приём заказов временно остановлен. Попробуйте позже.";
+
         return json(res, 503, {
-          error: "Приём заказов временно остановлен. Попробуйте позже."
+          error: message,
+          siteMessage: message
         });
       }
 
@@ -531,27 +541,53 @@ const server = http.createServer(async (req, res) => {
 
     // УПРАВЛЕНИЕ РАБОТОЙ САЙТА
     if (pathname === "/api/admin/site-status" && method === "GET") {
+      const data = read();
+
       return json(res, 200, {
-        siteOpen: read().siteOpen !== false
+        siteOpen: data.siteOpen !== false,
+        siteMessage: data.siteMessage || ""
       });
     }
 
     if (pathname === "/api/admin/site-status" && method === "PUT") {
       const body = await getBody(req);
+      const data = read();
 
-      if (typeof body.siteOpen !== "boolean") {
+      if (body.siteOpen !== undefined) {
+        if (typeof body.siteOpen !== "boolean") {
+          return json(res, 400, {
+            error: "Укажите корректное состояние сайта."
+          });
+        }
+
+        data.siteOpen = body.siteOpen;
+      }
+
+      if (body.siteMessage !== undefined) {
+        if (typeof body.siteMessage !== "string") {
+          return json(res, 400, {
+            error: "Введите текст сообщения."
+          });
+        }
+
+        data.siteMessage = body.siteMessage.trim().slice(0, 1000);
+      }
+
+      if (
+        body.siteOpen === undefined &&
+        body.siteMessage === undefined
+      ) {
         return json(res, 400, {
-          error: "Укажите состояние сайта."
+          error: "Нет настроек для сохранения."
         });
       }
 
-      const data = read();
-      data.siteOpen = body.siteOpen;
       save(data);
 
       return json(res, 200, {
         success: true,
-        siteOpen: data.siteOpen
+        siteOpen: data.siteOpen !== false,
+        siteMessage: data.siteMessage || ""
       });
     }
 
