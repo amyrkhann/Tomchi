@@ -1,3 +1,4 @@
+
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -202,6 +203,7 @@ function makeSeedMenu() {
 function initialData() {
   return {
     nextOrderId: 1001,
+    siteOpen: true,
     pickupPoints: DEFAULT_BRANCHES,
     orders: [],
     menu: makeSeedMenu()
@@ -225,6 +227,10 @@ function read() {
 
   if (!Array.isArray(data.orders)) data.orders = [];
   if (!data.nextOrderId) data.nextOrderId = 1001;
+
+  if (typeof data.siteOpen !== "boolean") {
+    data.siteOpen = true;
+  }
 
   if (
     !data.menu ||
@@ -443,6 +449,7 @@ function publicMenu(branchId) {
     products
   };
 }
+
 function safeFileName(name) {
   return String(name || "image")
     .replace(/[^a-z0-9._-]/gi, "_")
@@ -473,7 +480,8 @@ const server = http.createServer(async (req, res) => {
         zones: DELIVERY_ZONES.map(z => z.name),
         deliveryHours: "11:00-23:00",
         freeDeliveryMinimum: FREE_DELIVERY_MINIMUM,
-        smallOrderDelivery: SMALL_ORDER_DELIVERY
+        smallOrderDelivery: SMALL_ORDER_DELIVERY,
+        siteOpen: data.siteOpen !== false
       });
     }
 
@@ -508,6 +516,12 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/api/orders" && method === "POST") {
       const body = await getBody(req);
       const data = read();
+
+      if (data.siteOpen === false) {
+        return json(res, 503, {
+          error: "Приём заказов временно остановлен. Попробуйте позже."
+        });
+      }
 
       if (
         !body.name ||
@@ -630,12 +644,38 @@ const server = http.createServer(async (req, res) => {
 
     // АВТОРИЗАЦИЯ АДМИНКИ
     if (
-  pathname.startsWith("/api/admin/") ||
-  pathname === "/api/zone-settings" ||
-  (pathname === "/api/orders" && method !== "POST") ||
-  (pathname.startsWith("/api/orders/") && method === "PATCH")
-) {
+      pathname.startsWith("/api/admin/") ||
+      pathname === "/api/zone-settings" ||
+      (pathname === "/api/orders" && method !== "POST") ||
+      (pathname.startsWith("/api/orders/") && method === "PATCH")
+    ) {
       if (!requireAdmin(req, res)) return;
+    }
+
+    // УПРАВЛЕНИЕ РАБОТОЙ САЙТА
+    if (pathname === "/api/admin/site-status" && method === "GET") {
+      return json(res, 200, {
+        siteOpen: read().siteOpen !== false
+      });
+    }
+
+    if (pathname === "/api/admin/site-status" && method === "PUT") {
+      const body = await getBody(req);
+
+      if (typeof body.siteOpen !== "boolean") {
+        return json(res, 400, {
+          error: "Укажите состояние сайта."
+        });
+      }
+
+      const data = read();
+      data.siteOpen = body.siteOpen;
+      save(data);
+
+      return json(res, 200, {
+        success: true,
+        siteOpen: data.siteOpen
+      });
     }
 
     // ПОЛУЧИТЬ ВСЁ МЕНЮ ДЛЯ АДМИНКИ
@@ -851,6 +891,8 @@ const server = http.createServer(async (req, res) => {
           body.branchSettings &&
           typeof body.branchSettings === "object"
         ) {
+          product.branchSettings = product.branchSettings || {};
+
           for (
             const [branchId, setting]
             of Object.entries(body.branchSettings)
@@ -869,6 +911,8 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (Array.isArray(body.branchIds)) {
+          product.branchSettings = product.branchSettings || {};
+
           for (const branch of data.pickupPoints) {
             const key = String(branch.id);
 
@@ -1031,75 +1075,74 @@ const server = http.createServer(async (req, res) => {
       return json(res, 200, order);
     }
 
-    
     // СТАТИЧЕСКИЕ ФАЙЛЫ САЙТА
-let relative;
+    let relative;
 
-if (pathname === "/" || pathname === "/index.html") {
-  relative = "index.html";
-} else if (
-  pathname === "/admin" ||
-  pathname === "/admin.html"
-) {
-  relative = "admin.html";
-} else if (
-  /^\/(images|uploads|assets)\//.test(pathname)
-) {
-  relative = path.join(
-    "public",
-    pathname.replace(/^\/+/, "")
-  );
-} else {
-  return json(res, 404, {
-    error: "Not found"
-  });
-}
+    if (pathname === "/" || pathname === "/index.html") {
+      relative = "index.html";
+    } else if (
+      pathname === "/admin" ||
+      pathname === "/admin.html"
+    ) {
+      relative = "admin.html";
+    } else if (
+      /^\/(images|uploads|assets)\//.test(pathname)
+    ) {
+      relative = path.join(
+        "public",
+        pathname.replace(/^\/+/, "")
+      );
+    } else {
+      return json(res, 404, {
+        error: "Not found"
+      });
+    }
 
-const full = path.resolve(ROOT, relative);
+    const full = path.resolve(ROOT, relative);
 
-const publicRoot =
-  path.resolve(ROOT, "public") + path.sep;
+    const publicRoot =
+      path.resolve(ROOT, "public") + path.sep;
 
-const isRootPage =
-  full === path.resolve(ROOT, "index.html") ||
-  full === path.resolve(ROOT, "admin.html");
+    const isRootPage =
+      full === path.resolve(ROOT, "index.html") ||
+      full === path.resolve(ROOT, "admin.html");
 
-if (!isRootPage && !full.startsWith(publicRoot)) {
-  return json(res, 403, {
-    error: "Forbidden"
-  });
-}
+    if (!isRootPage && !full.startsWith(publicRoot)) {
+      return json(res, 403, {
+        error: "Forbidden"
+      });
+    }
 
-fs.readFile(full, (err, content) => {
-  if (err) {
-    res.writeHead(404, {
-      "Content-Type": "text/plain; charset=utf-8"
+    fs.readFile(full, (err, content) => {
+      if (err) {
+        res.writeHead(404, {
+          "Content-Type": "text/plain; charset=utf-8"
+        });
+        return res.end("Not found");
+      }
+
+      const ext = path.extname(full).toLowerCase();
+
+      const types = {
+        ".html": "text/html; charset=utf-8",
+        ".js": "text/javascript; charset=utf-8",
+        ".css": "text/css; charset=utf-8",
+        ".json": "application/json; charset=utf-8",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp",
+        ".svg": "image/svg+xml",
+        ".ico": "image/x-icon"
+      };
+
+      res.writeHead(200, {
+        "Content-Type":
+          types[ext] || "application/octet-stream"
+      });
+
+      res.end(content);
     });
-    return res.end("Not found");
-  }
-
-  const ext = path.extname(full).toLowerCase();
-
-  const types = {
-    ".html": "text/html; charset=utf-8",
-    ".js": "text/javascript; charset=utf-8",
-    ".css": "text/css; charset=utf-8",
-    ".json": "application/json; charset=utf-8",
-    ".jpg": "image/jpeg",
-    ".jpeg": "image/jpeg",
-    ".png": "image/png",
-    ".webp": "image/webp",
-    ".svg": "image/svg+xml",
-    ".ico": "image/x-icon"
-  };
-
-  res.writeHead(200, {
-    "Content-Type":
-      types[ext] || "application/octet-stream"
-  });
-
-  res.end(content);
-});
   } catch (error) {
     console.error(error);
 
