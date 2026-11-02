@@ -10,53 +10,55 @@ const DATA = path.join(ROOT, "data.json");
 const UPLOADS = path.join(ROOT, "public", "uploads");
 const PORT = process.env.PORT || 3000;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "CHANGE_ME";
-const DG_KEY = process.env.DGIS_KEY || "";
-const FREE_DELIVERY_MINIMUM = 5000;
-const SMALL_ORDER_DELIVERY = 500;
 
 // ФИЛИАЛЫ
 const DEFAULT_BRANCHES = [
   {
-    id: 1, name: "Абылай Хана 24", address: "Абылай Хана 24",
-    lat: 43.2636, lon: 76.9399, workTime: "24/7",
-    deliveryTime: "11:00-23:00", kaspi: "", whatsapp: "", radius: 1500
+    id: 1,
+    name: "Абылай Хана 24",
+    address: "Абылай Хана 24",
+    workTime: "24/7",
+    deliveryTime: "11:00-23:00",
+    kaspi: "",
+    whatsapp: ""
   },
   {
-    id: 2, name: "Tomchi Premium — Абылай Хана 34", address: "Абылай Хана 34",
-    lat: 43.2641, lon: 76.9406, workTime: "10:00-02:00",
-    deliveryTime: "11:00-23:00", kaspi: "", whatsapp: "", radius: 1500
+    id: 2,
+    name: "Tomchi Premium — Абылай Хана 34",
+    address: "Абылай Хана 34",
+    workTime: "10:00-02:00",
+    deliveryTime: "11:00-23:00",
+    kaspi: "",
+    whatsapp: ""
   },
   {
-    id: 3, name: "Жібек Жолы 106", address: "Жибек Жолы 106",
-    lat: 43.2624, lon: 76.9447, workTime: "10:00-02:00",
-    deliveryTime: "11:00-23:00", kaspi: "", whatsapp: "", radius: 1500
+    id: 3,
+    name: "Жібек Жолы 106",
+    address: "Жибек Жолы 106",
+    workTime: "10:00-02:00",
+    deliveryTime: "11:00-23:00",
+    kaspi: "",
+    whatsapp: ""
   },
   {
-    id: 4, name: "Абая 47", address: "Абая 47",
-    lat: 43.2410, lon: 76.9126, workTime: "10:00-02:00",
-    deliveryTime: "11:00-23:00", kaspi: "", whatsapp: "", radius: 1500
+    id: 4,
+    name: "Абая 47",
+    address: "Абая 47",
+    workTime: "10:00-02:00",
+    deliveryTime: "11:00-23:00",
+    kaspi: "",
+    whatsapp: ""
   },
   {
-    id: 5, name: "Яссауи 66", address: "Яссауи 66",
-    lat: 43.2210, lon: 76.7950, workTime: "10:00-02:00",
-    deliveryTime: "11:00-23:00", kaspi: "", whatsapp: "", radius: 1500
+    id: 5,
+    name: "Яссауи 66",
+    address: "Яссауи 66",
+    workTime: "10:00-02:00",
+    deliveryTime: "11:00-23:00",
+    kaspi: "",
+    whatsapp: ""
   }
 ];
-
-// ЗОНЫ ДОСТАВКИ
-const ZONE_1 = {
-  id: "zone1", name: "Зона 1",
-  minLat: 43.2380, maxLat: 43.2750,
-  minLon: 76.9100, maxLon: 76.9600
-};
-
-const ZONE_2 = {
-  id: "zone2", name: "Зона 2",
-  minLat: 43.2050, maxLat: 43.2400,
-  minLon: 76.7500, maxLon: 76.8500
-};
-
-const DELIVERY_ZONES = [ZONE_1, ZONE_2];
 
 // НАЧАЛЬНОЕ МЕНЮ
 const MENU_SEED = [
@@ -308,111 +310,6 @@ function requireAdmin(req, res) {
   return false;
 }
 
-async function geocode(query) {
-  if (!DG_KEY) throw new Error("DGIS_KEY не настроен в Render");
-
-  const url = "https://catalog.api.2gis.com/3.0/items/geocode?" +
-    new URLSearchParams({
-      q: query + ", Алматы, Казахстан",
-      fields: "items.point,items.full_address_name",
-      page_size: "1",
-      key: DG_KEY
-    });
-
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Ошибка геокодера 2GIS");
-
-  const data = await response.json();
-  const item = data?.result?.items?.[0];
-
-  if (!item?.point) return null;
-
-  return {
-    lat: Number(item.point.lat),
-    lon: Number(item.point.lon),
-    address: item.full_address_name || query
-  };
-}
-
-function insideZone(point, zone) {
-  return point.lat >= zone.minLat &&
-    point.lat <= zone.maxLat &&
-    point.lon >= zone.minLon &&
-    point.lon <= zone.maxLon;
-}
-
-function findZone(point) {
-  return DELIVERY_ZONES.find(zone => insideZone(point, zone)) || null;
-}
-
-function calculateDelivery(amount, inZone) {
-  if (!inZone) {
-    return {
-      deliveryPrice: null,
-      total: null,
-      externalCourier: true
-    };
-  }
-
-  if (amount >= FREE_DELIVERY_MINIMUM) {
-    return {
-      deliveryPrice: 0,
-      total: amount,
-      externalCourier: false
-    };
-  }
-
-  return {
-    deliveryPrice: SMALL_ORDER_DELIVERY,
-    total: amount + SMALL_ORDER_DELIVERY,
-    externalCourier: false
-  };
-}
-
-async function checkZone(address, amount = 0) {
-  const destination = await geocode(address);
-
-  if (!destination) {
-    return {
-      found: false,
-      inZone: false,
-      message: "Не удалось найти адрес. Уточните адрес."
-    };
-  }
-
-  const zone = findZone(destination);
-  const delivery = calculateDelivery(
-    Number(amount) || 0,
-    Boolean(zone)
-  );
-
-  if (!zone) {
-    return {
-      found: true,
-      inZone: false,
-      zone: null,
-      coordinates: destination,
-      deliveryPrice: null,
-      total: null,
-      externalCourier: true,
-      message: "Адрес вне зоны доставки. Курьера нужно вызвать через Яндекс Go или inDrive."
-    };
-  }
-
-  return {
-    found: true,
-    inZone: true,
-    zone: zone.name,
-    coordinates: destination,
-    deliveryPrice: delivery.deliveryPrice,
-    total: delivery.total,
-    externalCourier: false,
-    message: delivery.deliveryPrice === 0
-      ? "Адрес входит в зону. Доставка бесплатная — 0 ₸."
-      : "Адрес входит в зону. Доставка — 500 ₸."
-  };
-}
-
 function cleanProductForBranch(product, branchId) {
   const setting = product.branchSettings?.[String(branchId)] ||
     { enabled: true, price: product.basePrice };
@@ -450,10 +347,36 @@ function publicMenu(branchId) {
   };
 }
 
-function safeFileName(name) {
-  return String(name || "image")
-    .replace(/[^a-z0-9._-]/gi, "_")
-    .slice(0, 80);
+function sendStaticFile(res, full) {
+  fs.readFile(full, (err, content) => {
+    if (err) {
+      res.writeHead(404, {
+        "Content-Type": "text/plain; charset=utf-8"
+      });
+      return res.end("Not found");
+    }
+
+    const ext = path.extname(full).toLowerCase();
+
+    const types = {
+      ".html": "text/html; charset=utf-8",
+      ".js": "text/javascript; charset=utf-8",
+      ".css": "text/css; charset=utf-8",
+      ".json": "application/json; charset=utf-8",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".webp": "image/webp",
+      ".svg": "image/svg+xml",
+      ".ico": "image/x-icon"
+    };
+
+    res.writeHead(200, {
+      "Content-Type": types[ext] || "application/octet-stream"
+    });
+
+    res.end(content);
+  });
 }
 
 const server = http.createServer(async (req, res) => {
@@ -477,10 +400,7 @@ const server = http.createServer(async (req, res) => {
 
       return json(res, 200, {
         pickupPoints: data.pickupPoints,
-        zones: DELIVERY_ZONES.map(z => z.name),
         deliveryHours: "11:00-23:00",
-        freeDeliveryMinimum: FREE_DELIVERY_MINIMUM,
-        smallOrderDelivery: SMALL_ORDER_DELIVERY,
         siteOpen: data.siteOpen !== false
       });
     }
@@ -494,25 +414,7 @@ const server = http.createServer(async (req, res) => {
       );
     }
 
-    // ПРОВЕРКА ЗОНЫ ДОСТАВКИ
-    if (pathname === "/api/check-zone" && method === "POST") {
-      const body = await getBody(req);
-
-      if (!body.address) {
-        return json(res, 400, {
-          found: false,
-          message: "Введите адрес доставки."
-        });
-      }
-
-      return json(
-        res,
-        200,
-        await checkZone(body.address, Number(body.amount || 0))
-      );
-    }
-
-    // СОЗДАНИЕ ЗАКАЗА
+    // СОЗДАНИЕ ЗАКАЗА БЕЗ ПРОВЕРКИ АДРЕСА И 2GIS
     if (pathname === "/api/orders" && method === "POST") {
       const body = await getBody(req);
       const data = read();
@@ -523,12 +425,7 @@ const server = http.createServer(async (req, res) => {
         });
       }
 
-      if (
-        !body.name ||
-        !body.phone ||
-        !body.pickup ||
-        !body.address
-      ) {
+      if (!body.name || !body.phone || !body.pickup || !body.address) {
         return json(res, 400, {
           error: "Заполните имя, телефон, филиал и адрес."
         });
@@ -553,26 +450,25 @@ const server = http.createServer(async (req, res) => {
       if (items.length) {
         amount = 0;
 
-        itemText = items.map(item => {
+        const orderLines = [];
+
+        for (const item of items) {
           const product = data.menu.products.find(
             p => p.id === item.id
           );
 
           if (!product || product.active === false) {
-            throw new Error(
-              "Одно из выбранных блюд больше недоступно."
-            );
+            return json(res, 400, {
+              error: "Одно из выбранных блюд больше недоступно."
+            });
           }
 
-          const clean = cleanProductForBranch(
-            product,
-            branch.id
-          );
+          const clean = cleanProductForBranch(product, branch.id);
 
           if (!clean.active) {
-            throw new Error(
-              `Блюдо «${product.name}» недоступно в выбранном филиале.`
-            );
+            return json(res, 400, {
+              error: `Блюдо «${product.name}» недоступно в выбранном филиале.`
+            });
           }
 
           const qty = Math.max(
@@ -582,36 +478,18 @@ const server = http.createServer(async (req, res) => {
 
           amount += clean.price * qty;
 
-          return `${product.name} x${qty} — ${clean.price * qty} ₸`;
-        }).join("\n");
+          orderLines.push(
+            `${product.name} x${qty} — ${clean.price * qty} ₸`
+          );
+        }
+
+        itemText = orderLines.join("\n");
       }
 
       if (!Number.isFinite(amount) || amount <= 0) {
         return json(res, 400, {
           error: "Корзина пуста или сумма заказа некорректна."
         });
-      }
-
-      let zoneResult;
-
-      if (body.checkDelivery === false) {
-        zoneResult = {
-          found: true,
-          inZone: null,
-          zone: null,
-          deliveryPrice: 0,
-          total: amount,
-          externalCourier: false,
-          coordinates: null
-        };
-      } else {
-        zoneResult = await checkZone(body.address, amount);
-
-        if (!zoneResult.found) {
-          return json(res, 400, {
-            error: zoneResult.message
-          });
-        }
       }
 
       const order = {
@@ -627,12 +505,12 @@ const server = http.createServer(async (req, res) => {
         item: itemText,
         items,
         comment: String(body.comment || ""),
-        inZone: zoneResult.inZone,
-        zone: zoneResult.zone || null,
-        deliveryPrice: zoneResult.deliveryPrice,
-        total: zoneResult.total,
-        externalCourier: zoneResult.externalCourier,
-        coordinates: zoneResult.coordinates || null,
+        inZone: null,
+        zone: null,
+        deliveryPrice: null,
+        total: amount,
+        externalCourier: null,
+        coordinates: null,
         status: "Новый"
       };
 
@@ -645,7 +523,6 @@ const server = http.createServer(async (req, res) => {
     // АВТОРИЗАЦИЯ АДМИНКИ
     if (
       pathname.startsWith("/api/admin/") ||
-      pathname === "/api/zone-settings" ||
       (pathname === "/api/orders" && method !== "POST") ||
       (pathname.startsWith("/api/orders/") && method === "PATCH")
     ) {
@@ -876,7 +753,15 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (body.basePrice !== undefined) {
-          product.basePrice = Number(body.basePrice);
+          const price = Number(body.basePrice);
+
+          if (!Number.isFinite(price) || price < 0) {
+            return json(res, 400, {
+              error: "Укажите правильную цену."
+            });
+          }
+
+          product.basePrice = price;
         }
 
         if (body.active !== undefined) {
@@ -893,19 +778,24 @@ const server = http.createServer(async (req, res) => {
         ) {
           product.branchSettings = product.branchSettings || {};
 
-          for (
-            const [branchId, setting]
-            of Object.entries(body.branchSettings)
-          ) {
+          for (const [branchId, setting] of Object.entries(body.branchSettings)) {
             if (!data.pickupPoints.some(
               p => String(p.id) === String(branchId)
             )) continue;
 
+            const price = Number(
+              setting.price ?? product.basePrice
+            );
+
+            if (!Number.isFinite(price) || price < 0) {
+              return json(res, 400, {
+                error: "Укажите правильную цену филиала."
+              });
+            }
+
             product.branchSettings[String(branchId)] = {
               enabled: setting.enabled !== false,
-              price: Number(
-                setting.price ?? product.basePrice
-              )
+              price
             };
           }
         }
@@ -958,40 +848,6 @@ const server = http.createServer(async (req, res) => {
 
       save(data);
       return json(res, 200, data.pickupPoints);
-    }
-
-    // НАСТРОЙКИ ЗОН
-    if (pathname === "/api/zone-settings" && method === "GET") {
-      return json(
-        res,
-        200,
-        read().pickupPoints.map(p => ({
-          address: p.address,
-          radius: Number(p.radius || 1500)
-        }))
-      );
-    }
-
-    if (pathname === "/api/zone-settings" && method === "PUT") {
-      const body = await getBody(req);
-
-      if (!Array.isArray(body.pickupPoints)) {
-        return json(res, 400, {
-          error: "Неверные настройки зон."
-        });
-      }
-
-      const data = read();
-
-      data.pickupPoints = data.pickupPoints.map((p, i) => ({
-        ...p,
-        radius: Number(
-          body.pickupPoints[i]?.radius ?? p.radius ?? 1500
-        )
-      }));
-
-      save(data);
-      return json(res, 200, { success: true });
     }
 
     // ЗАГРУЗКА ФОТОГРАФИЙ
@@ -1113,36 +969,8 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    fs.readFile(full, (err, content) => {
-      if (err) {
-        res.writeHead(404, {
-          "Content-Type": "text/plain; charset=utf-8"
-        });
-        return res.end("Not found");
-      }
+    sendStaticFile(res, full);
 
-      const ext = path.extname(full).toLowerCase();
-
-      const types = {
-        ".html": "text/html; charset=utf-8",
-        ".js": "text/javascript; charset=utf-8",
-        ".css": "text/css; charset=utf-8",
-        ".json": "application/json; charset=utf-8",
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".png": "image/png",
-        ".webp": "image/webp",
-        ".svg": "image/svg+xml",
-        ".ico": "image/x-icon"
-      };
-
-      res.writeHead(200, {
-        "Content-Type":
-          types[ext] || "application/octet-stream"
-      });
-
-      res.end(content);
-    });
   } catch (error) {
     console.error(error);
 
