@@ -72,24 +72,25 @@ button.small{padding:8px 10px;font-size:12px}
   <div id="message"></div>
 
   <div class="tabs">
-    <button class="active" data-tab="menu" onclick="showTab('menu',this)">Меню</button>
-    <button data-tab="branches" onclick="showTab('branches',this)">Филиалы</button>
-    <button data-tab="orders" onclick="showTab('orders',this)">Заказы</button>
-    <button data-tab="zones" onclick="showTab('zones',this)">Зоны</button>
-    <button data-tab="settings" onclick="showTab('settings',this)">Настройки сайта</button>
+    <button class="active" onclick="showTab('menu',this)">Меню</button>
+    <button onclick="showTab('branches',this)">Филиалы</button>
+    <button onclick="showTab('orders',this)">Заказы</button>
+    <button onclick="showTab('settings',this)">Настройки сайта</button>
   </div>
 
-  <!-- МЕНЮ -->
   <section id="tab-menu">
     <div class="card">
       <h2>Управление меню</h2>
-      <p class="muted">Выберите филиал. Вы сможете менять наличие и цену блюд отдельно для каждого филиала.</p>
-      <label>Выберите филиал</label>
+      <p class="muted">Выберите филиал, чтобы отдельно управлять его блюдами и ценами.</p>
+
+      <label>Филиал</label>
       <select id="menuBranch" onchange="renderProducts()"></select>
+
       <label>Категория</label>
       <select id="categoryFilter" onchange="renderProducts()">
         <option value="all">Все категории</option>
       </select>
+
       <div class="row">
         <button onclick="loadMenu()">Обновить меню</button>
         <button class="secondary" onclick="showAddProduct()">Добавить блюдо</button>
@@ -98,21 +99,29 @@ button.small{padding:8px 10px;font-size:12px}
 
     <div class="card hidden" id="addProductBox">
       <h3>Новое блюдо</h3>
-      <label>Название блюда</label>
+
+      <label>Название</label>
       <input id="newName" placeholder="Например: Ташкентский плов">
+
       <label>Категория</label>
       <select id="newCategory"></select>
+
       <label>Описание</label>
       <textarea id="newDescription" placeholder="Состав или описание"></textarea>
+
       <label>Цена, ₸</label>
       <input id="newPrice" type="number" min="0" placeholder="2090">
+
       <label>Эмодзи</label>
       <input id="newEmoji" value="🍽️">
+
       <label>Фото блюда</label>
       <input id="newImageFile" type="file" accept="image/jpeg,image/png,image/webp">
-      <p class="muted">Можно загрузить JPG, PNG или WEBP до 8 МБ.</p>
+      <p class="muted">JPG, PNG или WEBP до 8 МБ.</p>
+
       <label>В каких филиалах продавать?</label>
       <div id="newBranches" class="checks"></div>
+
       <div class="row">
         <button onclick="addProduct()">Сохранить блюдо</button>
         <button class="secondary" onclick="hideAddProduct()">Отмена</button>
@@ -137,17 +146,15 @@ button.small{padding:8px 10px;font-size:12px}
     </div>
   </section>
 
-  <!-- ФИЛИАЛЫ -->
   <section id="tab-branches" class="hidden">
     <div class="card">
-      <h2>Пять филиалов Tomchi</h2>
-      <p class="muted">Изменяйте адреса, названия, время работы и контакты. Не меняйте ID филиалов.</p>
+      <h2>Филиалы Tomchi</h2>
+      <p class="muted">Изменяйте названия, адреса, время работы и контакты. Не меняйте ID филиалов.</p>
       <div id="branches"></div>
       <button onclick="saveBranches()">Сохранить филиалы</button>
     </div>
   </section>
 
-  <!-- ЗАКАЗЫ -->
   <section id="tab-orders" class="hidden">
     <div class="card">
       <h2>Заказы клиентов</h2>
@@ -156,41 +163,22 @@ button.small{padding:8px 10px;font-size:12px}
     </div>
   </section>
 
-  <!-- ЗОНЫ -->
-  <section id="tab-zones" class="hidden">
-    <div class="card">
-      <h2>Радиусы доставки</h2>
-      <p class="muted">Радиус указывается в метрах. Эти значения относятся к настройкам филиалов.</p>
-      <div id="zones"></div>
-      <button onclick="saveZones()">Сохранить радиусы</button>
-    </div>
-  </section>
-
-  <!-- НАСТРОЙКИ САЙТА -->
   <section id="tab-settings" class="hidden">
     <div class="card site-panel">
       <h2>Управление работой сайта</h2>
-      <p class="muted">
-        Здесь можно временно остановить приём новых заказов
-        или снова открыть сайт для клиентов.
-      </p>
+      <p class="muted">Здесь можно временно остановить приём новых заказов или снова открыть сайт.</p>
 
       <div>
         <span id="siteStatus" class="status">Проверка состояния сайта...</span>
       </div>
 
-      <button id="siteToggleButton" onclick="toggleSite()" disabled>
-        Загрузка...
-      </button>
+      <button id="siteToggleButton" onclick="toggleSite()" disabled>Загрузка...</button>
 
       <p class="muted" style="margin-top:18px">
-        При выключении сайта клиенты не смогут оформить новые заказы.
-        Старые заказы сохраняются.
+        При выключении сайта клиенты не смогут оформить новые заказы. Старые заказы сохраняются.
       </p>
 
-      <button class="secondary" onclick="loadSiteStatus()">
-        Обновить состояние
-      </button>
+      <button class="secondary" onclick="loadSiteStatus()">Обновить состояние</button>
     </div>
   </section>
 </main>
@@ -210,21 +198,18 @@ async function api(url, options={}) {
     ...(options.headers || {})
   };
 
-  if (options.body && !(options.body instanceof FormData)) {
+  if(options.body && !(options.body instanceof FormData)) {
     headers["Content-Type"] = "application/json";
   }
 
   const response = await fetch(API + url, {...options,headers});
   const data = await response.json().catch(()=>({}));
 
-  if (!response.ok) {
-    throw new Error(data.error || "Ошибка запроса");
-  }
-
+  if(!response.ok) throw new Error(data.error || "Ошибка запроса");
   return data;
 }
 
-function notify(text, error=false) {
+function notify(text,error=false) {
   const el=document.getElementById("message");
   el.textContent=text;
   el.className=error?"err":"ok";
@@ -244,17 +229,12 @@ async function login() {
 
   try {
     await api("/api/admin/menu");
-
     sessionStorage.setItem("tomchi_admin_token",TOKEN);
+
     document.getElementById("login").classList.add("hidden");
     document.getElementById("app").classList.remove("hidden");
 
-    await Promise.all([
-      loadBranches(),
-      loadMenu(),
-      loadSiteStatus()
-    ]);
-
+    await Promise.all([loadBranches(),loadMenu(),loadSiteStatus()]);
     notify("Вы успешно вошли в админку.");
   } catch(e) {
     TOKEN="";
@@ -262,73 +242,57 @@ async function login() {
   }
 }
 
-// СОСТОЯНИЕ САЙТА
 async function loadSiteStatus() {
   try {
-    const result = await api("/api/admin/site-status");
-
-    siteOpen = result.siteOpen !== false;
+    const result=await api("/api/admin/site-status");
+    siteOpen=result.siteOpen!==false;
     renderSiteStatus();
   } catch(e) {
-    const label = document.getElementById("siteStatus");
-    const button = document.getElementById("siteToggleButton");
+    const label=document.getElementById("siteStatus");
+    const button=document.getElementById("siteToggleButton");
 
     if(label) {
-      label.textContent = "Не удалось получить состояние сайта";
-      label.className = "status off";
+      label.textContent="Не удалось получить состояние сайта";
+      label.className="status off";
     }
-
     if(button) {
-      button.textContent = "Ошибка загрузки";
-      button.disabled = true;
+      button.textContent="Ошибка загрузки";
+      button.disabled=true;
     }
-
     notify(e.message,true);
   }
 }
 
 function renderSiteStatus() {
-  const label = document.getElementById("siteStatus");
-  const button = document.getElementById("siteToggleButton");
+  const label=document.getElementById("siteStatus");
+  const button=document.getElementById("siteToggleButton");
+  if(!label||!button)return;
 
-  if(!label || !button) return;
+  label.textContent=siteOpen
+    ?"САЙТ ВКЛЮЧЁН — ЗАКАЗЫ ПРИНИМАЮТСЯ"
+    :"САЙТ ВЫКЛЮЧЕН — ЗАКАЗЫ НЕ ПРИНИМАЮТСЯ";
 
-  label.textContent = siteOpen
-    ? "САЙТ ВКЛЮЧЁН — ЗАКАЗЫ ПРИНИМАЮТСЯ"
-    : "САЙТ ВЫКЛЮЧЕН — ЗАКАЗЫ НЕ ПРИНИМАЮТСЯ";
-
-  label.className = siteOpen ? "status" : "status off";
-
-  button.textContent = siteOpen
-    ? "Выключить сайт"
-    : "Включить сайт";
-
-  button.className = siteOpen ? "danger" : "";
-  button.disabled = false;
+  label.className=siteOpen?"status":"status off";
+  button.textContent=siteOpen?"Выключить сайт":"Включить сайт";
+  button.className=siteOpen?"danger":"";
+  button.disabled=false;
 }
 
 async function toggleSite() {
-  const button = document.getElementById("siteToggleButton");
+  const button=document.getElementById("siteToggleButton");
 
   try {
-    button.disabled = true;
-    button.textContent = "Сохранение...";
+    button.disabled=true;
+    button.textContent="Сохранение...";
 
-    const next = !siteOpen;
-
-    const result = await api("/api/admin/site-status", {
-      method: "PUT",
-      body: JSON.stringify({siteOpen: next})
+    const result=await api("/api/admin/site-status",{
+      method:"PUT",
+      body:JSON.stringify({siteOpen:!siteOpen})
     });
 
-    siteOpen = result.siteOpen !== false;
+    siteOpen=result.siteOpen!==false;
     renderSiteStatus();
-
-    notify(
-      siteOpen
-        ? "Сайт включён. Заказы принимаются."
-        : "Сайт выключен. Новые заказы остановлены."
-    );
+    notify(siteOpen?"Сайт включён. Заказы принимаются.":"Сайт выключен. Новые заказы остановлены.");
   } catch(e) {
     renderSiteStatus();
     notify(e.message,true);
@@ -339,35 +303,30 @@ async function loadBranches() {
   branches=await api("/api/admin/branches");
 
   const select=document.getElementById("menuBranch");
-  const previous=select.value || "1";
+  const previous=select.value||"1";
 
   select.innerHTML=branches.map(b=>
-    `<option value="${b.id}">${esc(b.name)}</option>`
+    `<option value="${esc(b.id)}">${esc(b.name)}</option>`
   ).join("");
 
-  if(branches.some(b=>String(b.id)===previous)) {
-    select.value=previous;
-  }
+  if(branches.some(b=>String(b.id)===previous)) select.value=previous;
 
   document.getElementById("newBranches").innerHTML=branches.map(b=>
-    `<label class="check"><input type="checkbox" value="${b.id}" checked> ${esc(b.name)}</label>`
+    `<label class="check"><input type="checkbox" value="${esc(b.id)}" checked> ${esc(b.name)}</label>`
   ).join("");
 
   renderBranches();
-  renderZones();
 }
 
 async function loadMenu() {
   menu=await api("/api/admin/menu");
-
   renderCategories();
   renderProducts();
 
-  const options=menu.categories.map(c=>
-    `<option value="${esc(c.id)}">${esc(c.name)}</option>`
-  ).join("");
-
-  document.getElementById("newCategory").innerHTML=options;
+  document.getElementById("newCategory").innerHTML=menu.categories
+    .filter(c=>c.active!==false)
+    .map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`)
+    .join("");
 }
 
 function renderCategories() {
@@ -378,9 +337,7 @@ function renderCategories() {
   filter.innerHTML='<option value="all">Все категории</option>'+
     active.map(c=>`<option value="${esc(c.id)}">${esc(c.emoji||"")} ${esc(c.name)}</option>`).join("");
 
-  if(active.some(c=>c.id===selected)) {
-    filter.value=selected;
-  }
+  if(active.some(c=>c.id===selected)) filter.value=selected;
 
   document.getElementById("categories").innerHTML=menu.categories.map(c=>`
     <div class="row product">
@@ -391,15 +348,15 @@ function renderCategories() {
       <button class="small secondary" onclick="editCategory('${esc(c.id)}')">Изменить</button>
       <button class="small danger" onclick="deleteCategory('${esc(c.id)}')">Удалить</button>
     </div>
-  `).join("");
+  `).join("")||"<p class='muted'>Категорий пока нет.</p>";
 }
 
 function renderProducts() {
-  const branchId=document.getElementById("menuBranch").value || "1";
+  const branchId=document.getElementById("menuBranch").value||"1";
   const categoryId=document.getElementById("categoryFilter").value;
 
   const list=menu.products.filter(p=>
-    categoryId==="all" || p.categoryId===categoryId
+    categoryId==="all"||p.categoryId===categoryId
   );
 
   const branch=branches.find(b=>String(b.id)===String(branchId));
@@ -407,13 +364,9 @@ function renderProducts() {
   document.getElementById("products").innerHTML=
     `<p class="muted">Филиал: ${esc(branch?.name||"")}. Всего блюд: ${list.length}</p>`+
     list.map(p=>{
-      const setting=p.branchSettings?.[branchId] || {
-        enabled:true,
-        price:p.basePrice
-      };
-
+      const setting=p.branchSettings?.[branchId]||{enabled:true,price:p.basePrice};
       const category=menu.categories.find(c=>c.id===p.categoryId);
-      const available=p.active!==false && setting.enabled!==false;
+      const available=p.active!==false&&setting.enabled!==false;
 
       return `<div class="product">
         <div class="product-top">
@@ -422,38 +375,30 @@ function renderProducts() {
             <div class="muted">${esc(category?.name||"Без категории")}</div>
             <div class="muted">${esc(p.description||"")}</div>
             <div class="product-price">${Number(setting.price??p.basePrice).toLocaleString("ru-RU")} ₸</div>
-            <span class="status ${available?"":"off"}">
-              ${available?"Доступно":"Недоступно"}
-            </span>
+            <span class="status ${available?"":"off"}">${available?"Доступно":"Недоступно"}</span>
           </div>
           ${p.image?`<img src="${esc(p.image)}" alt="">`:""}
         </div>
-
         <div class="row" style="margin-top:12px">
           <button class="small" onclick="editProduct('${esc(p.id)}')">Изменить</button>
-          <button class="small ${available?"secondary":""}"
-            onclick="toggleProduct('${esc(p.id)}',${!available})">
+          <button class="small ${available?"secondary":""}" onclick="toggleProduct('${esc(p.id)}',${!available})">
             ${available?"Выключить":"Включить"} в этом филиале
           </button>
         </div>
       </div>`;
-    }).join("") || "<p class='muted'>В этой категории пока нет блюд.</p>";
+    }).join("")||"<p class='muted'>В этой категории пока нет блюд.</p>";
 }
 
 function showAddProduct() {
   document.getElementById("addProductBox").classList.remove("hidden");
 }
-
 function hideAddProduct() {
   document.getElementById("addProductBox").classList.add("hidden");
 }
 
 async function uploadImage(file) {
   if(!file)return "";
-
-  if(file.size>8*1024*1024) {
-    throw new Error("Фото должно быть меньше 8 МБ.");
-  }
+  if(file.size>8*1024*1024) throw new Error("Фото должно быть меньше 8 МБ.");
 
   const data=await new Promise((resolve,reject)=>{
     const reader=new FileReader();
@@ -466,7 +411,6 @@ async function uploadImage(file) {
     method:"POST",
     body:JSON.stringify({data})
   });
-
   return result.url;
 }
 
@@ -480,13 +424,10 @@ async function addProduct() {
       throw new Error("Заполните название, категорию и цену.");
     }
 
-    const branchIds=[
-      ...document.querySelectorAll("#newBranches input:checked")
-    ].map(x=>Number(x.value));
+    const branchIds=[...document.querySelectorAll("#newBranches input:checked")]
+      .map(x=>Number(x.value));
 
-    if(!branchIds.length) {
-      throw new Error("Выберите хотя бы один филиал.");
-    }
+    if(!branchIds.length) throw new Error("Выберите хотя бы один филиал.");
 
     const file=document.getElementById("newImageFile").files[0];
     const image=await uploadImage(file);
@@ -522,10 +463,7 @@ async function editProduct(id) {
   if(!p)return;
 
   const branchId=document.getElementById("menuBranch").value;
-  const current=p.branchSettings?.[branchId]||{
-    enabled:true,
-    price:p.basePrice
-  };
+  const current=p.branchSettings?.[branchId]||{enabled:true,price:p.basePrice};
 
   const name=prompt("Название блюда:",p.name);
   if(name===null)return;
@@ -534,7 +472,6 @@ async function editProduct(id) {
   if(price===null)return;
 
   const number=Number(price);
-
   if(!Number.isFinite(number)||number<0) {
     notify("Некорректная цена.",true);
     return;
@@ -543,12 +480,11 @@ async function editProduct(id) {
   const description=prompt("Описание блюда:",p.description||"");
   if(description===null)return;
 
-  const image=prompt("Ссылка на фото (оставьте пустым, если фото нет):",p.image||"");
+  const image=prompt("Ссылка на фото. Оставьте пустым, если фото нет:",p.image||"");
   if(image===null)return;
 
   try {
     const branchSettings={...(p.branchSettings||{})};
-
     branchSettings[branchId]={
       enabled:current.enabled!==false,
       price:number
@@ -556,12 +492,7 @@ async function editProduct(id) {
 
     await api("/api/admin/products/"+encodeURIComponent(id),{
       method:"PATCH",
-      body:JSON.stringify({
-        name:name.trim(),
-        description,
-        image,
-        branchSettings
-      })
+      body:JSON.stringify({name:name.trim(),description,image,branchSettings})
     });
 
     await loadMenu();
@@ -571,21 +502,13 @@ async function editProduct(id) {
   }
 }
 
-// ИСПРАВЛЕННОЕ ВКЛЮЧЕНИЕ И ВЫКЛЮЧЕНИЕ БЛЮД
-async function toggleProduct(id, enabled) {
+async function toggleProduct(id,enabled) {
   try {
     const p=menu.products.find(x=>x.id===id);
-
-    if(!p) {
-      throw new Error("Блюдо не найдено.");
-    }
+    if(!p)throw new Error("Блюдо не найдено.");
 
     const branchId=document.getElementById("menuBranch").value;
-
-    const setting=p.branchSettings?.[branchId]||{
-      price:p.basePrice
-    };
-
+    const setting=p.branchSettings?.[branchId]||{price:p.basePrice};
     const branchSettings={...(p.branchSettings||{})};
 
     branchSettings[branchId]={
@@ -593,13 +516,8 @@ async function toggleProduct(id, enabled) {
       price:setting.price??p.basePrice
     };
 
-    const update={
-      branchSettings
-    };
-
-    if(enabled) {
-      update.active=true;
-    }
+    const update={branchSettings};
+    if(enabled)update.active=true;
 
     await api("/api/admin/products/"+encodeURIComponent(id),{
       method:"PATCH",
@@ -607,11 +525,7 @@ async function toggleProduct(id, enabled) {
     });
 
     await loadMenu();
-
-    notify(enabled
-      ? "Блюдо включено!"
-      : "Блюдо выключено."
-    );
+    notify(enabled?"Блюдо включено!":"Блюдо выключено.");
   } catch(e) {
     notify(e.message,true);
   }
@@ -621,10 +535,7 @@ async function addCategory() {
   try {
     const name=document.getElementById("newCategoryName").value.trim();
     const emoji=document.getElementById("newCategoryEmoji").value.trim()||"🍽️";
-
-    if(!name) {
-      throw new Error("Введите название категории.");
-    }
+    if(!name)throw new Error("Введите название категории.");
 
     await api("/api/admin/categories",{
       method:"POST",
@@ -641,6 +552,7 @@ async function addCategory() {
 
 async function editCategory(id) {
   const c=menu.categories.find(x=>x.id===id);
+  if(!c)return;
 
   const name=prompt("Название категории:",c.name);
   if(name===null)return;
@@ -653,7 +565,6 @@ async function editCategory(id) {
       method:"PATCH",
       body:JSON.stringify({name,emoji,active:true})
     });
-
     await loadMenu();
     notify("Категория изменена.");
   } catch(e) {
@@ -662,13 +573,10 @@ async function editCategory(id) {
 }
 
 async function deleteCategory(id) {
-  if(!confirm("Удалить категорию? Её блюда будут скрыты из меню."))return;
+  if(!confirm("Удалить категорию? Её блюда могут перестать отображаться в меню."))return;
 
   try {
-    await api("/api/admin/categories/"+encodeURIComponent(id),{
-      method:"DELETE"
-    });
-
+    await api("/api/admin/categories/"+encodeURIComponent(id),{method:"DELETE"});
     await loadMenu();
     notify("Категория удалена.");
   } catch(e) {
@@ -679,25 +587,28 @@ async function deleteCategory(id) {
 function renderBranches() {
   document.getElementById("branches").innerHTML=branches.map(b=>`
     <div class="product">
-      <h3>Филиал №${b.id}</h3>
+      <h3>Филиал №${esc(b.id)}</h3>
 
       <label>Название</label>
-      <input data-branch="${b.id}" data-field="name" value="${esc(b.name)}">
+      <input data-branch="${esc(b.id)}" data-field="name" value="${esc(b.name)}">
 
       <label>Адрес</label>
-      <input data-branch="${b.id}" data-field="address" value="${esc(b.address)}">
+      <input data-branch="${esc(b.id)}" data-field="address" value="${esc(b.address)}">
 
-      <label>Время работы</label>
-      <input data-branch="${b.id}" data-field="workTime" value="${esc(b.workTime||"")}">
+      <label>Время работы филиала</label>
+      <input data-branch="${esc(b.id)}" data-field="workTime" value="${esc(b.workTime||"")}">
 
       <label>Время доставки</label>
-      <input data-branch="${b.id}" data-field="deliveryTime" value="${esc(b.deliveryTime||"")}">
+      <input data-branch="${esc(b.id)}" data-field="deliveryTime" value="${esc(b.deliveryTime||"11:00–23:00")}">
 
       <label>Kaspi — номер или реквизиты</label>
-      <input data-branch="${b.id}" data-field="kaspi" value="${esc(b.kaspi||"")}">
+      <input data-branch="${esc(b.id)}" data-field="kaspi" value="${esc(b.kaspi||"")}">
+
+      <label>Получатель Kaspi</label>
+      <input data-branch="${esc(b.id)}" data-field="kaspiName" value="${esc(b.kaspiName||"")}">
 
       <label>WhatsApp филиала</label>
-      <input data-branch="${b.id}" data-field="whatsapp" value="${esc(b.whatsapp||"")}">
+      <input data-branch="${esc(b.id)}" data-field="whatsapp" value="${esc(b.whatsapp||"")}">
     </div>
   `).join("");
 }
@@ -726,43 +637,9 @@ async function saveBranches() {
   }
 }
 
-function renderZones() {
-  document.getElementById("zones").innerHTML=branches.map(b=>`
-    <div class="product">
-      <b>${esc(b.name)}</b>
-      <label>Радиус, метров</label>
-      <input type="number" min="0" data-radius="${b.id}" value="${Number(b.radius||1500)}">
-    </div>
-  `).join("");
-}
-
-async function saveZones() {
-  try {
-    const pickupPoints=branches.map(b=>({
-      address:b.address,
-      radius:Number(document.querySelector(`[data-radius="${b.id}"]`).value)
-    }));
-
-    if(pickupPoints.some(p=>!Number.isFinite(p.radius)||p.radius<0)) {
-      throw new Error("Проверьте радиусы.");
-    }
-
-    await api("/api/zone-settings",{
-      method:"PUT",
-      body:JSON.stringify({pickupPoints})
-    });
-
-    await loadBranches();
-    notify("Радиусы сохранены.");
-  } catch(e) {
-    notify(e.message,true);
-  }
-}
-
 async function loadOrders() {
   try {
     orders=await api("/api/orders");
-
     const el=document.getElementById("orders");
 
     if(!orders.length) {
@@ -773,7 +650,7 @@ async function loadOrders() {
     el.innerHTML=orders.map(o=>`
       <div class="order">
         <div class="product-top">
-          <b>Заказ №${o.id}</b>
+          <b>Заказ №${esc(o.id)}</b>
           <span class="status">${esc(o.status||"Новый")}</span>
         </div>
 
@@ -787,23 +664,19 @@ async function loadOrders() {
         <pre>${esc(o.item||"")}</pre>
 
         <p>
-          <b>Сумма:</b> ${Number(o.amount||0).toLocaleString("ru-RU")} ₸
-          <br>
-          <b>Доставка:</b> ${o.deliveryPrice===null?"Внешний курьер":Number(o.deliveryPrice||0)+" ₸"}
-          <br>
+          <b>Сумма:</b> ${Number(o.amount||0).toLocaleString("ru-RU")} ₸<br>
+          <b>Доставка:</b> ${o.deliveryPrice===null?"Внешний курьер":Number(o.deliveryPrice||0)+" ₸"}<br>
           <b>Комментарий:</b> ${esc(o.comment||"—")}
         </p>
 
         <label>Статус заказа</label>
-        <select id="status-${o.id}">
+        <select id="status-${esc(o.id)}">
           ${["Новый","Принят","Готовится","В пути","Доставлен","Отменён"].map(s=>
             `<option ${o.status===s?"selected":""}>${s}</option>`
           ).join("")}
         </select>
 
-        <button class="small" onclick="updateOrder(${o.id})">
-          Сохранить статус
-        </button>
+        <button class="small" onclick="updateOrder('${esc(o.id)}')">Сохранить статус</button>
       </div>
     `).join("");
   } catch(e) {
@@ -815,7 +688,7 @@ async function updateOrder(id) {
   try {
     const status=document.getElementById("status-"+id).value;
 
-    await api("/api/orders/"+id,{
+    await api("/api/orders/"+encodeURIComponent(id),{
       method:"PATCH",
       body:JSON.stringify({status})
     });
@@ -828,20 +701,14 @@ async function updateOrder(id) {
 }
 
 function showTab(tab,button) {
-  document.querySelectorAll("main>section").forEach(s=>
-    s.classList.add("hidden")
-  );
-
+  document.querySelectorAll("main>section").forEach(s=>s.classList.add("hidden"));
   document.getElementById("tab-"+tab).classList.remove("hidden");
 
-  document.querySelectorAll(".tabs button").forEach(b=>
-    b.classList.remove("active")
-  );
-
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
   button.classList.add("active");
 
   if(tab==="orders")loadOrders();
-  if(tab==="branches"||tab==="zones")loadBranches();
+  if(tab==="branches")loadBranches();
   if(tab==="settings")loadSiteStatus();
 }
 
