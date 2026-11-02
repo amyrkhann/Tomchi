@@ -27,6 +27,7 @@ body{
 }
 button,input,textarea{font:inherit}
 button{cursor:pointer}
+button:disabled{opacity:.6;cursor:not-allowed}
 .hidden{display:none!important}
 header{
   background:var(--gold);
@@ -110,11 +111,23 @@ header{
   font-size:29px;
   margin-bottom:8px;
 }
+.zone-image-wrap{
+  margin:16px 0;
+  background:#eee5d5;
+  border:1px solid #e0cfad;
+  border-radius:16px;
+  overflow:hidden;
+  min-height:190px;
+}
+.zone-image{
+  width:100%;
+  display:block;
+  max-height:480px;
+  object-fit:contain;
+  background:#eee5d5;
+}
 .zone-placeholder{
   min-height:190px;
-  background:#eee5d5;
-  border:2px dashed #c8ae7b;
-  border-radius:16px;
   display:flex;
   flex-direction:column;
   justify-content:center;
@@ -122,10 +135,40 @@ header{
   text-align:center;
   color:var(--gold);
   padding:20px;
-  margin:16px 0;
 }
 .zone-placeholder .symbol{font-size:45px}
 .zone-placeholder strong{font-size:16px;margin-top:8px}
+.hours-card{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:15px;
+  margin:14px 0;
+}
+.hours-icon{
+  width:43px;
+  height:43px;
+  border-radius:12px;
+  background:#f4ead7;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+}
+.hours-info{flex:1}
+.hours-label{
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+.hours-time{
+  font-size:17px;
+  font-weight:900;
+  color:var(--gold);
+}
 .notice{
   background:#fffaf0;
   border-left:4px solid var(--gold);
@@ -355,7 +398,6 @@ footer{
 
 <main class="container">
 
-  <!-- ВЫБОР ЯЗЫКА -->
   <section id="languageScreen">
     <div style="text-align:center;padding-top:55px">
       <div style="font-size:48px">🍽️</div>
@@ -380,16 +422,33 @@ footer{
     </div>
 
     <h2 class="screen-title" data-t="zoneTitle">Зона доставки</h2>
-    <p class="subtitle" data-t="zoneSubtitle">Ознакомьтесь с нашей зоной бесплатной доставки.</p>
+    <p class="subtitle" data-t="zoneSubtitle">Ознакомьтесь с нашей зоной доставки.</p>
 
-    <div class="zone-placeholder">
-      <div class="symbol">📍</div>
-      <strong data-t="photoLater">Фотография зоны доставки появится здесь</strong>
-      <span style="font-size:12px;margin-top:7px" data-t="photoLaterSub">Скоро добавим карту нашей зоны</span>
+    <div class="zone-image-wrap">
+      <img
+        id="zoneImage"
+        class="zone-image hidden"
+        src="/images/delivery-zone.jpg"
+        alt="Зона доставки TOMCHI PREMIUM"
+        onerror="showZonePlaceholder()"
+      >
+      <div id="zonePlaceholder" class="zone-placeholder">
+        <div class="symbol">📍</div>
+        <strong data-t="photoLater">Фотография зоны доставки появится здесь</strong>
+        <span style="font-size:12px;margin-top:7px" data-t="photoLaterSub">Добавьте фотографию зоны доставки</span>
+      </div>
+    </div>
+
+    <div class="hours-card">
+      <div class="hours-icon">🕒</div>
+      <div class="hours-info">
+        <div class="hours-label" data-t="deliveryHoursLabel">ВРЕМЯ ДОСТАВКИ</div>
+        <div class="hours-time">11:00 – 23:00</div>
+      </div>
     </div>
 
     <div class="notice">
-      <strong data-t="freeTitle">Наша зона — бесплатная доставка.</strong>
+      <strong data-t="freeTitle">Ознакомьтесь с зоной доставки.</strong>
       <p data-t="freeText" style="margin-bottom:0">
         Если ваш адрес не входит в нашу зону, вы самостоятельно вызываете курьера через Яндекс Go или inDrive и оплачиваете его услуги.
       </p>
@@ -407,6 +466,14 @@ footer{
 
     <h2 class="screen-title" data-t="branchTitle">Выберите филиал</h2>
     <p class="subtitle" data-t="branchSubtitle">Выберите удобный для вас филиал.</p>
+
+    <div class="hours-card">
+      <div class="hours-icon">🛵</div>
+      <div class="hours-info">
+        <div class="hours-label" data-t="deliveryHoursLabel">ВРЕМЯ ДОСТАВКИ</div>
+        <div class="hours-time">11:00 – 23:00</div>
+      </div>
+    </div>
 
     <div id="branchesList">
       <div class="loading">Загрузка филиалов...</div>
@@ -469,18 +536,17 @@ footer{
         <textarea id="customerComment" placeholder="Подъезд, этаж, пожелания..."></textarea>
       </div>
       <div class="notice" data-t="courierReminder">
-        Если ваш адрес находится за пределами нашей бесплатной зоны, вызов и оплата стороннего курьера — за ваш счёт.
+        Если ваш адрес находится за пределами нашей зоны, вызов и оплата стороннего курьера — за ваш счёт.
       </div>
       <div id="checkoutError"></div>
-      <button class="primary" id="sendOrderButton" onclick="sendOrder()" data-t="sendWhatsApp">
-        Отправить заказ в WhatsApp
+      <button class="primary" id="sendOrderButton" onclick="sendOrder()" data-t="sendOrder">
+        Оформить заказ
       </button>
     </div>
   </section>
 
 </main>
 
-<!-- КОРЗИНА ВНИЗУ -->
 <div id="bottomCart" class="bottom-cart hidden">
   <div class="bottom-cart-inner">
     <button class="cart-button" onclick="openCheckout()">
@@ -499,10 +565,11 @@ const translations = {
   ru: {
     back:"Назад",
     zoneTitle:"Зона доставки",
-    zoneSubtitle:"Ознакомьтесь с нашей зоной бесплатной доставки.",
-    photoLater:"Фотография зоны доставки появится здесь",
-    photoLaterSub:"Скоро добавим карту нашей зоны",
-    freeTitle:"Наша зона — бесплатная доставка.",
+    zoneSubtitle:"Ознакомьтесь с нашей зоной доставки.",
+    photoLater:"Фотография зоны доставки пока не добавлена",
+    photoLaterSub:"Здесь будет фотография нашей зоны доставки",
+    deliveryHoursLabel:"ВРЕМЯ ДОСТАВКИ",
+    freeTitle:"Ознакомьтесь с зоной доставки.",
     freeText:"Если ваш адрес не входит в нашу зону, вы самостоятельно вызываете курьера через Яндекс Go или inDrive и оплачиваете его услуги.",
     continue:"Продолжить",
     branchTitle:"Выберите филиал",
@@ -520,36 +587,36 @@ const translations = {
     phoneLabel:"Номер телефона *",
     addressLabel:"Адрес доставки *",
     commentLabel:"Комментарий к заказу",
-    courierReminder:"Если ваш адрес находится за пределами нашей бесплатной зоны, вызов и оплата стороннего курьера — за ваш счёт.",
-    sendWhatsApp:"Отправить заказ в WhatsApp",
+    courierReminder:"Если ваш адрес находится за пределами нашей зоны, вызов и оплата стороннего курьера — за ваш счёт.",
+    sendOrder:"Оформить заказ",
     cartButton:"Корзина",
     emptyCart:"Ваша корзина пока пуста.",
     loading:"Загрузка...",
-    add:"Добавить",
-    choose:"Выбрать",
-    order:"ЗАКАЗ TOMCHI PREMIUM",
-    branch:"Филиал",
-    customer:"Клиент",
-    phone:"Телефон",
-    address:"Адрес",
-    comment:"Комментарий",
     errorName:"Введите ваше имя.",
     errorPhone:"Введите номер телефона.",
     errorAddress:"Введите адрес доставки.",
     errorCart:"Добавьте блюда в корзину.",
     errorMenu:"Не удалось загрузить меню. Обновите страницу.",
     errorBranches:"Не удалось загрузить филиалы. Обновите страницу.",
-    sending:"Отправляем...",
+    sending:"Оформляем заказ...",
     orderSuccess:"Заказ сохранён. Сейчас откроется WhatsApp.",
-    noProducts:"В этой категории пока нет блюд."
+    noProducts:"В этой категории пока нет блюд.",
+    order:"ЗАКАЗ TOMCHI PREMIUM",
+    branch:"Филиал",
+    customer:"Клиент",
+    phone:"Телефон",
+    address:"Адрес",
+    comment:"Комментарий",
+    all:"Все"
   },
   kk: {
     back:"Артқа",
     zoneTitle:"Жеткізу аймағы",
-    zoneSubtitle:"Тегін жеткізу аймағымызбен танысыңыз.",
-    photoLater:"Жеткізу аймағының суреті осында болады",
-    photoLaterSub:"Карта жақында қосылады",
-    freeTitle:"Біздің аймақта жеткізу тегін.",
+    zoneSubtitle:"Жеткізу аймағымызбен танысыңыз.",
+    photoLater:"Жеткізу аймағының суреті әлі қосылмады",
+    photoLaterSub:"Мұнда жеткізу аймағының суреті болады",
+    deliveryHoursLabel:"ЖЕТКІЗУ УАҚЫТЫ",
+    freeTitle:"Жеткізу аймағымен танысыңыз.",
     freeText:"Егер мекенжайыңыз біздің аймаққа кірмесе, Яндекс Go немесе inDrive арқылы курьерді өзіңіз шақырып, ақысын өзіңіз төлейсіз.",
     continue:"Жалғастыру",
     branchTitle:"Филиалды таңдаңыз",
@@ -567,28 +634,27 @@ const translations = {
     phoneLabel:"Телефон нөмірі *",
     addressLabel:"Жеткізу мекенжайы *",
     commentLabel:"Тапсырысқа түсініктеме",
-    courierReminder:"Егер мекенжайыңыз тегін жеткізу аймағынан тыс болса, курьерді шақыру және төлеу өз есебіңізден.",
-    sendWhatsApp:"WhatsApp арқылы тапсырыс беру",
+    courierReminder:"Егер мекенжайыңыз біздің аймақтан тыс болса, курьерді шақыру және төлеу өз есебіңізден.",
+    sendOrder:"Тапсырысты рәсімдеу",
     cartButton:"Себет",
     emptyCart:"Себетіңіз әзірге бос.",
     loading:"Жүктелуде...",
-    add:"Қосу",
-    choose:"Таңдау",
-    order:"TOMCHI PREMIUM ТАПСЫРЫСЫ",
-    branch:"Филиал",
-    customer:"Клиент",
-    phone:"Телефон",
-    address:"Мекенжай",
-    comment:"Түсініктеме",
     errorName:"Атыңызды енгізіңіз.",
     errorPhone:"Телефон нөмірін енгізіңіз.",
     errorAddress:"Жеткізу мекенжайын енгізіңіз.",
     errorCart:"Себетке тағам қосыңыз.",
     errorMenu:"Мәзір жүктелмеді. Бетті жаңартыңыз.",
     errorBranches:"Филиалдар жүктелмеді. Бетті жаңартыңыз.",
-    sending:"Жіберілуде...",
+    sending:"Тапсырыс рәсімделуде...",
     orderSuccess:"Тапсырыс сақталды. WhatsApp ашылады.",
-    noProducts:"Бұл санатта әзірге тағам жоқ."
+    noProducts:"Бұл санатта әзірге тағам жоқ.",
+    order:"TOMCHI PREMIUM ТАПСЫРЫСЫ",
+    branch:"Филиал",
+    customer:"Клиент",
+    phone:"Телефон",
+    address:"Мекенжай",
+    comment:"Түсініктеме",
+    all:"Барлығы"
   }
 };
 
@@ -614,18 +680,29 @@ function chooseLanguage(language){
 function applyTranslations(){
   document.querySelectorAll("[data-t]").forEach(el=>{
     const key = el.getAttribute("data-t");
-    if(translations[lang][key]) el.textContent = translations[lang][key];
+    if(translations[lang][key]) {
+      el.textContent = translations[lang][key];
+    }
   });
+}
+
+function showZonePlaceholder(){
+  document.getElementById("zoneImage").classList.add("hidden");
+  document.getElementById("zonePlaceholder").classList.remove("hidden");
 }
 
 function goTo(id){
   document.querySelectorAll("main section").forEach(section=>{
     section.classList.add("hidden");
   });
+
   document.getElementById(id).classList.remove("hidden");
 
-  const showCart = id === "menuScreen" && cartCount() > 0;
-  document.getElementById("bottomCart").classList.toggle("hidden", id !== "menuScreen");
+  document.getElementById("bottomCart").classList.toggle(
+    "hidden",
+    id !== "menuScreen" || cartCount() === 0
+  );
+
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
@@ -639,12 +716,17 @@ async function api(url, options={}){
   });
 
   const data = await response.json().catch(()=>({}));
-  if(!response.ok) throw new Error(data.error || "Ошибка сервера");
+
+  if(!response.ok) {
+    throw new Error(data.error || "Ошибка сервера");
+  }
+
   return data;
 }
 
 async function loadBranches(){
   goTo("branchesScreen");
+
   const list = document.getElementById("branchesList");
   list.innerHTML = `<div class="loading">${t("loading")}</div>`;
 
@@ -652,7 +734,9 @@ async function loadBranches(){
     const config = await api("/api/config");
     branches = config.pickupPoints || [];
 
-    if(!branches.length) throw new Error(t("errorBranches"));
+    if(!branches.length) {
+      throw new Error(t("errorBranches"));
+    }
 
     list.innerHTML = branches.map(branch=>`
       <div class="card branch-card" onclick="selectBranch(${Number(branch.id)})">
@@ -661,10 +745,12 @@ async function loadBranches(){
           <div class="branch-name">${escapeHTML(branch.name)}</div>
           <div class="branch-address">📍 ${escapeHTML(branch.address || "")}</div>
           <div class="branch-address">🕒 ${escapeHTML(branch.workTime || "")}</div>
+          <div class="branch-address">🛵 ${lang==="kk"?"Жеткізу":"Доставка"}: 11:00–23:00</div>
         </div>
         <div class="arrow">›</div>
       </div>
     `).join("");
+
   }catch(error){
     list.innerHTML = `<div class="error">${escapeHTML(error.message)}</div>`;
   }
@@ -672,21 +758,32 @@ async function loadBranches(){
 
 async function selectBranch(id){
   selectedBranch = branches.find(b=>Number(b.id)===Number(id));
+
   if(!selectedBranch) return;
 
-  document.getElementById("selectedBranchName").textContent = selectedBranch.name;
+  document.getElementById("selectedBranchName").textContent =
+    selectedBranch.name;
+
   goTo("menuScreen");
-  document.getElementById("productsList").innerHTML = `<div class="loading">${t("loading")}</div>`;
+
+  document.getElementById("productsList").innerHTML =
+    `<div class="loading">${t("loading")}</div>`;
+
   document.getElementById("categoryBar").innerHTML = "";
 
   try{
-    const data = await api("/api/menu?branchId="+encodeURIComponent(id));
+    const data = await api(
+      "/api/menu?branchId="+encodeURIComponent(id)
+    );
+
     categories = data.categories || [];
     products = data.products || [];
     selectedCategory = "all";
+
     renderCategories();
     renderProducts();
     updateCart();
+
   }catch(error){
     document.getElementById("productsList").innerHTML =
       `<div class="error">${escapeHTML(error.message || t("errorMenu"))}</div>`;
@@ -695,12 +792,17 @@ async function selectBranch(id){
 
 function renderCategories(){
   const bar = document.getElementById("categoryBar");
+
   bar.innerHTML = `
-    <button class="category-button active" data-category="all" onclick="chooseCategory('all')">
-      ${lang==="kk"?"Барлығы":"Все"}
+    <button class="category-button active"
+      data-category="all"
+      onclick="chooseCategory('all')">
+      ${t("all")}
     </button>
   ` + categories.map(category=>`
-    <button class="category-button" data-category="${escapeHTML(category.id)}" onclick="chooseCategory('${escapeJS(category.id)}')">
+    <button class="category-button"
+      data-category="${escapeHTML(category.id)}"
+      onclick="chooseCategory('${escapeJS(category.id)}')">
       ${escapeHTML(category.emoji || "🍽️")} ${escapeHTML(category.name)}
     </button>
   `).join("");
@@ -708,14 +810,20 @@ function renderCategories(){
 
 function chooseCategory(id){
   selectedCategory = id;
+
   document.querySelectorAll(".category-button").forEach(button=>{
-    button.classList.toggle("active",button.dataset.category===id);
+    button.classList.toggle(
+      "active",
+      button.dataset.category===id
+    );
   });
+
   renderProducts();
 }
 
 function renderProducts(){
   const list = document.getElementById("productsList");
+
   const filtered = products.filter(p=>
     selectedCategory==="all" || p.categoryId===selectedCategory
   );
@@ -727,22 +835,34 @@ function renderProducts(){
 
   list.innerHTML = filtered.map(product=>{
     const quantity = Number(cart[product.id] || 0);
+
     const image = product.image
-      ? `<img src="${escapeHTML(product.image)}" alt="" onerror="this.style.display='none'">`
+      ? `<img src="${escapeHTML(product.image)}" alt=""
+          onerror="this.style.display='none'">`
       : escapeHTML(product.emoji || "🍽️");
 
     return `
       <div class="card product-card">
         <div class="product-image">${image}</div>
+
         <div class="product-info">
           <div class="product-name">${escapeHTML(product.name)}</div>
-          ${product.description ? `<div class="product-description">${escapeHTML(product.description)}</div>` : ""}
+
+          ${product.description
+            ? `<div class="product-description">${escapeHTML(product.description)}</div>`
+            : ""}
+
           <div class="product-price">${formatPrice(product.price)} ₸</div>
         </div>
+
         <div class="quantity">
-          <button class="qty-button" onclick="changeQuantity('${escapeJS(product.id)}',-1)">−</button>
+          <button class="qty-button"
+            onclick="changeQuantity('${escapeJS(product.id)}',-1)">−</button>
+
           <span class="qty-number">${quantity}</span>
-          <button class="qty-button" onclick="changeQuantity('${escapeJS(product.id)}',1)">+</button>
+
+          <button class="qty-button"
+            onclick="changeQuantity('${escapeJS(product.id)}',1)">+</button>
         </div>
       </div>
     `;
@@ -753,20 +873,26 @@ function changeQuantity(id,change){
   const current = Number(cart[id] || 0);
   const next = Math.max(0,Math.min(99,current+change));
 
-  if(next===0) delete cart[id];
-  else cart[id]=next;
+  if(next===0) {
+    delete cart[id];
+  } else {
+    cart[id]=next;
+  }
 
   renderProducts();
   updateCart();
 }
 
 function cartCount(){
-  return Object.values(cart).reduce((sum,qty)=>sum+Number(qty),0);
+  return Object.values(cart).reduce(
+    (sum,qty)=>sum+Number(qty),0
+  );
 }
 
 function cartTotal(){
   return products.reduce((sum,p)=>{
-    return sum + Number(p.price || 0)*Number(cart[p.id] || 0);
+    return sum +
+      Number(p.price || 0)*Number(cart[p.id] || 0);
   },0);
 }
 
@@ -779,9 +905,17 @@ function updateCart(){
   const total = cartTotal();
 
   document.getElementById("bottomCount").textContent = count;
-  document.getElementById("bottomTotal").textContent = formatPrice(total)+" ₸　→";
-  document.getElementById("bottomCart").classList.toggle("hidden",
-    document.getElementById("menuScreen").classList.contains("hidden")
+
+  document.getElementById("bottomTotal").textContent =
+    formatPrice(total)+" ₸　→";
+
+  const onMenu = !document
+    .getElementById("menuScreen")
+    .classList.contains("hidden");
+
+  document.getElementById("bottomCart").classList.toggle(
+    "hidden",
+    !onMenu || count===0
   );
 }
 
@@ -796,14 +930,19 @@ function openCheckout(){
 }
 
 function renderCheckoutCart(){
-  const chosen = products.filter(p=>Number(cart[p.id] || 0)>0);
+  const chosen = products.filter(
+    p=>Number(cart[p.id] || 0)>0
+  );
+
   const container = document.getElementById("cartItems");
 
   if(!chosen.length){
-    container.innerHTML = `<div class="empty">${t("emptyCart")}</div>`;
+    container.innerHTML =
+      `<div class="empty">${t("emptyCart")}</div>`;
   }else{
     container.innerHTML = chosen.map(p=>{
       const qty = Number(cart[p.id]);
+
       return `
         <div class="cart-row">
           <div>
@@ -818,7 +957,8 @@ function renderCheckoutCart(){
     }).join("");
   }
 
-  document.getElementById("cartTotal").textContent = formatPrice(cartTotal())+" ₸";
+  document.getElementById("cartTotal").textContent =
+    formatPrice(cartTotal())+" ₸";
 }
 
 async function sendOrder(){
@@ -826,10 +966,10 @@ async function sendOrder(){
   const phone = document.getElementById("customerPhone").value.trim();
   const address = document.getElementById("customerAddress").value.trim();
   const comment = document.getElementById("customerComment").value.trim();
-  const errorBox = document.getElementById("checkoutError");
+
   const button = document.getElementById("sendOrderButton");
 
-  errorBox.innerHTML = "";
+  document.getElementById("checkoutError").innerHTML = "";
 
   if(!name) return showCheckoutError(t("errorName"));
   if(!phone) return showCheckoutError(t("errorPhone"));
@@ -839,7 +979,10 @@ async function sendOrder(){
 
   const items = products
     .filter(p=>Number(cart[p.id] || 0)>0)
-    .map(p=>({id:p.id,quantity:Number(cart[p.id])}));
+    .map(p=>({
+      id:p.id,
+      quantity:Number(cart[p.id])
+    }));
 
   const amount = cartTotal();
 
@@ -864,23 +1007,31 @@ async function sendOrder(){
 
     const message = buildWhatsAppMessage({
       orderId:order.id,
-      name,phone,address,comment,
-      items,amount
+      name,
+      phone,
+      address,
+      comment,
+      items,
+      amount
     });
 
     alert(t("orderSuccess"));
+
     window.location.href =
-      "https://wa.me/"+WHATSAPP_NUMBER+"?text="+encodeURIComponent(message);
+      "https://wa.me/"+WHATSAPP_NUMBER+
+      "?text="+encodeURIComponent(message);
 
   }catch(error){
     showCheckoutError(error.message);
+
     button.disabled = false;
-    button.textContent = t("sendWhatsApp");
+    button.textContent = t("sendOrder");
   }
 }
 
 function buildWhatsAppMessage(data){
   const lines = [];
+
   lines.push("🍽️ *"+t("order")+"*");
   lines.push("━━━━━━━━━━━━━━");
   lines.push("🧾 Заказ № "+data.orderId);
@@ -890,9 +1041,12 @@ function buildWhatsAppMessage(data){
 
   data.items.forEach(item=>{
     const product = products.find(p=>p.id===item.id);
+
     if(product){
-      lines.push("• "+product.name+" × "+item.quantity+" — "+
-        formatPrice(product.price*item.quantity)+" ₸");
+      lines.push(
+        "• "+product.name+" × "+item.quantity+
+        " — "+formatPrice(product.price*item.quantity)+" ₸"
+      );
     }
   });
 
@@ -903,7 +1057,9 @@ function buildWhatsAppMessage(data){
   lines.push("📞 "+t("phone")+": "+data.phone);
   lines.push("📍 "+t("address")+": "+data.address);
 
-  if(data.comment) lines.push("💬 "+t("comment")+": "+data.comment);
+  if(data.comment){
+    lines.push("💬 "+t("comment")+": "+data.comment);
+  }
 
   lines.push("");
   lines.push("TOMCHI PREMIUM");
@@ -927,7 +1083,9 @@ function escapeHTML(value){
 }
 
 function escapeJS(value){
-  return String(value ?? "").replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  return String(value ?? "")
+    .replace(/\\/g,"\\\\")
+    .replace(/'/g,"\\'");
 }
 </script>
 
