@@ -49,6 +49,9 @@ button.small{padding:8px 10px;font-size:12px}
 .site-panel{text-align:center;padding:25px 15px}
 .site-panel .status{font-size:15px;padding:12px 18px;margin:10px 0 20px}
 .site-panel button{min-width:190px;padding:15px;font-size:15px}
+.site-message-box{text-align:left;max-width:650px;margin:25px auto 15px}
+.site-message-box textarea{min-height:115px;resize:vertical}
+.site-message-box button{width:100%;margin-top:5px}
 @media(min-width:700px){.product-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}}
 </style>
 </head>
@@ -174,6 +177,17 @@ button.small{padding:8px 10px;font-size:12px}
 
       <button id="siteToggleButton" onclick="toggleSite()" disabled>Загрузка...</button>
 
+      <div class="site-message-box">
+        <label for="siteMessageInput">Сообщение для клиентов при выключенном сайте</label>
+        <textarea
+          id="siteMessageInput"
+          maxlength="1000"
+          placeholder="Например: Сегодня мы закрыты на техническое обслуживание. Скоро вернёмся."
+        ></textarea>
+        <p class="muted">Это сообщение увидят посетители сайта, пока приём заказов выключен. Максимум 1000 символов.</p>
+        <button class="secondary" onclick="saveSiteMessage()">Сохранить сообщение</button>
+      </div>
+
       <p class="muted" style="margin-top:18px">
         При выключении сайта клиенты не смогут оформить новые заказы. Старые заказы сохраняются.
       </p>
@@ -190,6 +204,7 @@ let branches = [];
 let menu = {categories:[],products:[]};
 let orders = [];
 let siteOpen = true;
+let siteMessage = "";
 let messageTimer;
 
 async function api(url, options={}) {
@@ -246,6 +261,11 @@ async function loadSiteStatus() {
   try {
     const result=await api("/api/admin/site-status");
     siteOpen=result.siteOpen!==false;
+    siteMessage=result.siteMessage||"";
+
+    const input=document.getElementById("siteMessageInput");
+    if(input)input.value=siteMessage;
+
     renderSiteStatus();
   } catch(e) {
     const label=document.getElementById("siteStatus");
@@ -278,21 +298,53 @@ function renderSiteStatus() {
   button.disabled=false;
 }
 
+async function saveSiteMessage() {
+  const input=document.getElementById("siteMessageInput");
+  const value=input.value.trim();
+
+  try {
+    const result=await api("/api/admin/site-status",{
+      method:"PUT",
+      body:JSON.stringify({siteMessage:value})
+    });
+
+    siteMessage=result.siteMessage||"";
+    input.value=siteMessage;
+    notify("Сообщение для клиентов сохранено.");
+  } catch(e) {
+    notify(e.message,true);
+  }
+}
+
 async function toggleSite() {
   const button=document.getElementById("siteToggleButton");
+  const input=document.getElementById("siteMessageInput");
 
   try {
     button.disabled=true;
     button.textContent="Сохранение...";
 
+    const currentMessage=input ? input.value.trim() : siteMessage;
+
     const result=await api("/api/admin/site-status",{
       method:"PUT",
-      body:JSON.stringify({siteOpen:!siteOpen})
+      body:JSON.stringify({
+        siteOpen:!siteOpen,
+        siteMessage:currentMessage
+      })
     });
 
     siteOpen=result.siteOpen!==false;
+    siteMessage=result.siteMessage||"";
+
+    if(input)input.value=siteMessage;
+
     renderSiteStatus();
-    notify(siteOpen?"Сайт включён. Заказы принимаются.":"Сайт выключен. Новые заказы остановлены.");
+
+    notify(siteOpen
+      ?"Сайт включён. Заказы принимаются."
+      :"Сайт выключен. Новые заказы остановлены."
+    );
   } catch(e) {
     renderSiteStatus();
     notify(e.message,true);
