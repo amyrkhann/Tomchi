@@ -795,6 +795,11 @@ function applyTranslations(){
   });
 }
 
+function showZoneImage(){
+  document.getElementById("zoneImage").classList.remove("hidden");
+  document.getElementById("zonePlaceholder").classList.add("hidden");
+}
+
 function showZonePlaceholder(){
   document.getElementById("zoneImage").classList.add("hidden");
   document.getElementById("zonePlaceholder").classList.remove("hidden");
