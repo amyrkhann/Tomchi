@@ -30,7 +30,6 @@ button{cursor:pointer}
 button:disabled{opacity:.6;cursor:not-allowed}
 .hidden{display:none!important}
 
-/* Пока проверяем состояние сайта, не показываем содержимое */
 body.checking-site main,
 body.checking-site .bottom-cart,
 body.checking-site footer{
@@ -304,6 +303,87 @@ header{
   text-align:center;
   font-weight:800;
 }
+
+/* Выбор шашлыков для каждого отдельного комбо */
+.combo-product-info{
+  flex-basis:100%;
+}
+.combo-choice{
+  width:100%;
+  margin-top:12px;
+  padding:11px;
+  background:#fffaf0;
+  border:1px solid var(--border);
+  border-radius:12px;
+}
+.combo-choice-title{
+  font-size:13px;
+  font-weight:900;
+  margin-bottom:8px;
+  color:var(--gold);
+}
+.combo-option{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:6px 0;
+  font-size:13px;
+  border-bottom:1px solid #eee5d5;
+}
+.combo-option:last-of-type{
+  border-bottom:0;
+}
+.combo-option-controls{
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.combo-option-controls button{
+  width:28px;
+  height:28px;
+  border:0;
+  border-radius:8px;
+  background:var(--gold);
+  color:white;
+  font-size:18px;
+  font-weight:900;
+}
+.combo-counter{
+  min-width:15px;
+  text-align:center;
+  font-weight:900;
+}
+.combo-total{
+  margin-top:9px;
+  padding-top:8px;
+  border-top:1px solid var(--border);
+  font-size:12px;
+  font-weight:900;
+}
+.combo-hint{
+  color:var(--muted);
+  font-size:11px;
+  margin-top:5px;
+}
+.combo-unit{
+  width:100%;
+  margin-top:12px;
+  padding-top:11px;
+  border-top:1px solid var(--border);
+}
+.combo-unit-heading{
+  font-size:12px;
+  font-weight:900;
+  margin-bottom:5px;
+}
+.combo-ready{
+  color:#287a36;
+}
+.combo-incomplete{
+  color:#a32c20;
+}
+
 .bottom-cart{
   position:fixed;
   bottom:0;
@@ -388,8 +468,6 @@ header{
   padding:35px;
   color:var(--muted);
 }
-
-/* Экран выключенного сайта */
 .closed-screen{
   min-height:65vh;
   display:flex;
@@ -441,7 +519,6 @@ footer{
 
 <main class="container">
 
-  <!-- ЭКРАН ВЫКЛЮЧЕННОГО САЙТА -->
   <section id="siteClosedScreen" class="closed-screen hidden">
     <div class="closed-icon">🔧</div>
     <h1 class="closed-title">TOMCHI PREMIUM</h1>
@@ -467,7 +544,6 @@ footer{
     </div>
   </section>
 
-  <!-- ЗОНА ДОСТАВКИ -->
   <section id="zoneScreen" class="hidden">
     <div class="topline">
       <button class="back" onclick="goTo('languageScreen')">← <span data-t="back">Назад</span></button>
@@ -484,7 +560,7 @@ footer{
         src="/images/8f54a33a-d397-4766-9be5-ed775f86e3f3.jpeg"
         alt="Зона доставки TOMCHI PREMIUM"
         onload="showZoneImage()"
-onerror="showZonePlaceholder()"
+        onerror="showZonePlaceholder()"
       >
       <div id="zonePlaceholder" class="zone-placeholder">
         <div class="symbol">📍</div>
@@ -511,7 +587,6 @@ onerror="showZonePlaceholder()"
     <button class="primary" onclick="loadBranches()" data-t="continue">Продолжить</button>
   </section>
 
-  <!-- ФИЛИАЛЫ -->
   <section id="branchesScreen" class="hidden">
     <div class="topline">
       <button class="back" onclick="goTo('zoneScreen')">← <span data-t="back">Назад</span></button>
@@ -534,7 +609,6 @@ onerror="showZonePlaceholder()"
     </div>
   </section>
 
-  <!-- МЕНЮ -->
   <section id="menuScreen" class="hidden">
     <div class="topline">
       <button class="back" onclick="goTo('branchesScreen')">← <span data-t="branches">Филиалы</span></button>
@@ -553,7 +627,6 @@ onerror="showZonePlaceholder()"
     <div id="productsList"><div class="loading">Загрузка меню...</div></div>
   </section>
 
-  <!-- КОРЗИНА И ОФОРМЛЕНИЕ -->
   <section id="checkoutScreen" class="hidden">
     <div class="topline">
       <button class="back" onclick="goTo('menuScreen')">← <span data-t="backMenu">Вернуться в меню</span></button>
@@ -614,6 +687,14 @@ onerror="showZonePlaceholder()"
 
 <script>
 const WHATSAPP_NUMBER = "77479370909";
+
+const FAMILY_COMBO_OPTIONS = [
+  "Шашлык люля",
+  "Рулет",
+  "Утка",
+  "Крылья",
+  "Окорочка"
+];
 
 const translations = {
   ru: {
@@ -719,11 +800,161 @@ let products = [];
 let selectedBranch = null;
 let selectedCategory = "all";
 let cart = {};
+
+/*
+  ВАЖНО:
+  Для каждого Семейного Комбо хранится отдельный массив выбора.
+  Например:
+  comboSelections[id][0] — состав первого комбо.
+  comboSelections[id][1] — состав второго комбо.
+*/
+let comboSelections = {};
+
 let siteIsOpen = true;
 let siteMessage = "";
 
 function t(key){
   return translations[lang][key] || translations.ru[key] || key;
+}
+
+function isFamilyCombo(product){
+  return String(product?.name || "").trim().toLowerCase()
+    === "семейный комбо";
+}
+
+function getComboSelections(id){
+  if(!Array.isArray(comboSelections[id])){
+    comboSelections[id] = [];
+  }
+  return comboSelections[id];
+}
+
+function getComboSelectedCount(id,index){
+  const selections = getComboSelections(id);
+  const selection = selections[index] || {};
+
+  return FAMILY_COMBO_OPTIONS.reduce(
+    (sum,name)=>sum+Number(selection[name] || 0),0
+  );
+}
+
+function getComboSelectionText(id,index){
+  const selections = getComboSelections(id);
+  const selection = selections[index] || {};
+
+  return FAMILY_COMBO_OPTIONS
+    .filter(name=>Number(selection[name] || 0)>0)
+    .map(name=>name+" x"+Number(selection[name]))
+    .join(", ");
+}
+
+function comboIsComplete(id,index){
+  return getComboSelectedCount(id,index) === 4;
+}
+
+function allComboSelectionsComplete(){
+  const comboProducts = products.filter(
+    p=>isFamilyCombo(p) && Number(cart[p.id] || 0)>0
+  );
+
+  for(const product of comboProducts){
+    const quantity = Number(cart[product.id] || 0);
+    const selections = getComboSelections(product.id);
+
+    for(let i=0;i<quantity;i++){
+      if(!selections[i] || getComboSelectedCount(product.id,i)!==4){
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+function comboSelectionHTML(product){
+  const quantity = Number(cart[product.id] || 0);
+  const selections = getComboSelections(product.id);
+
+  let html = `
+    <div class="combo-choice">
+      <div class="combo-choice-title">
+        🍢 Выберите 4 шашлыка для каждого комбо
+      </div>
+      <div class="combo-hint">
+        Для каждого набора можно выбрать свой состав. Одинаковые шашлыки тоже можно повторять.
+      </div>
+  `;
+
+  for(let index=0;index<quantity;index++){
+    const selection = selections[index] || {};
+    const total = getComboSelectedCount(product.id,index);
+    const complete = total === 4;
+
+    html += `
+      <div class="combo-unit">
+        <div class="combo-unit-heading ${complete?"combo-ready":"combo-incomplete"}">
+          Комбо №${index+1} — выбрано ${total} / 4
+          ${complete?" ✓":""}
+        </div>
+
+        ${FAMILY_COMBO_OPTIONS.map(name=>`
+          <div class="combo-option">
+            <span>${escapeHTML(name)}</span>
+            <div class="combo-option-controls">
+              <button type="button"
+                onclick="changeComboSkewer('${escapeJS(product.id)}',${index},'${escapeJS(name)}',-1)">−</button>
+
+              <span class="combo-counter">
+                ${Number(selection[name] || 0)}
+              </span>
+
+              <button type="button"
+                onclick="changeComboSkewer('${escapeJS(product.id)}',${index},'${escapeJS(name)}',1)"
+                ${total>=4?"disabled":""}>+</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+function changeComboSkewer(id,index,name,change){
+  if(!FAMILY_COMBO_OPTIONS.includes(name)) return;
+
+  const quantity = Number(cart[id] || 0);
+
+  if(index<0 || index>=quantity) return;
+
+  const selections = getComboSelections(id);
+
+  if(!selections[index]){
+    selections[index] = {};
+  }
+
+  const selection = selections[index];
+  const current = Number(selection[name] || 0);
+  const total = getComboSelectedCount(id,index);
+
+  if(change>0 && total>=4) return;
+
+  const next = Math.max(0,current+change);
+
+  if(next===0){
+    delete selection[name];
+  }else{
+    selection[name]=next;
+  }
+
+  renderProducts();
+  updateCart();
+
+  if(!document.getElementById("checkoutScreen").classList.contains("hidden")){
+    renderCheckoutCart();
+  }
 }
 
 /* Проверка состояния сайта */
@@ -766,13 +997,10 @@ function showClosedScreen(message){
   window.scrollTo({top:0,behavior:"instant"});
 }
 
-/* Проверяем состояние до показа основного сайта */
 async function startPublicSite(){
   await checkPublicSite();
   document.body.classList.remove("checking-site");
 }
-
-const translationsUnused = null;
 
 function chooseLanguage(language){
   if(!siteIsOpen){
@@ -989,6 +1217,7 @@ function renderProducts(){
 
   list.innerHTML = filtered.map(product=>{
     const quantity = Number(cart[product.id] || 0);
+    const isCombo = isFamilyCombo(product);
 
     const image = product.image
       ? `<img src="${escapeHTML(product.image)}" alt=""
@@ -999,7 +1228,7 @@ function renderProducts(){
       <div class="card product-card">
         <div class="product-image">${image}</div>
 
-        <div class="product-info">
+        <div class="product-info ${isCombo?"combo-product-info":""}">
           <div class="product-name">${escapeHTML(product.name)}</div>
 
           ${product.description
@@ -1007,6 +1236,8 @@ function renderProducts(){
             : ""}
 
           <div class="product-price">${formatPrice(product.price)} ₸</div>
+
+          ${isCombo ? comboSelectionHTML(product) : ""}
         </div>
 
         <div class="quantity">
@@ -1029,8 +1260,23 @@ function changeQuantity(id,change){
     return;
   }
 
+  const product = products.find(p=>p.id===id);
   const current = Number(cart[id] || 0);
   const next = Math.max(0,Math.min(99,current+change));
+
+  if(product && isFamilyCombo(product)){
+    const selections = getComboSelections(id);
+
+    if(next>current){
+      selections.push({});
+    }else if(next<current){
+      selections.length = next;
+    }
+
+    if(next===0){
+      delete comboSelections[id];
+    }
+  }
 
   if(next===0) {
     delete cart[id];
@@ -1107,13 +1353,32 @@ function renderCheckoutCart(){
     container.innerHTML = chosen.map(p=>{
       const qty = Number(cart[p.id]);
 
+      let comboDetails = "";
+
+      if(isFamilyCombo(p)){
+        const selections = getComboSelections(p.id);
+
+        comboDetails = Array.from({length:qty},(_,index)=>{
+          const text = getComboSelectionText(p.id,index);
+          const complete = comboIsComplete(p.id,index);
+
+          return `
+            <div style="color:${complete?"#287a36":"#a32c20"};margin-top:7px;font-size:12px">
+              🍢 Комбо №${index+1}: ${escapeHTML(text || "Состав ещё не выбран")}
+              ${complete?" ✓":" — выберите 4 шашлыка"}
+            </div>
+          `;
+        }).join("");
+      }
+
       return `
         <div class="cart-row">
-          <div>
+          <div style="flex:1">
             <strong>${escapeHTML(p.name)}</strong>
             <div style="color:var(--muted);margin-top:4px">
               ${formatPrice(p.price)} ₸ × ${qty}
             </div>
+            ${comboDetails}
           </div>
           <strong>${formatPrice(p.price*qty)} ₸</strong>
         </div>
@@ -1136,7 +1401,6 @@ async function sendOrder(){
   button.textContent = t("sending");
 
   try{
-    /* Повторно проверяем, не выключил ли администратор сайт */
     const config = await api("/api/config");
 
     if(config.siteOpen === false){
@@ -1173,12 +1437,37 @@ async function sendOrder(){
       return;
     }
 
+    /* Проверяем состав каждого отдельного комбо */
+    if(!allComboSelectionsComplete()){
+      showCheckoutError(
+        "Для каждого Семейного Комбо необходимо выбрать ровно 4 шашлыка."
+      );
+      renderCheckoutCart();
+      return;
+    }
+
     const items = products
       .filter(p=>Number(cart[p.id] || 0)>0)
-      .map(p=>({
-        id:p.id,
-        quantity:Number(cart[p.id])
-      }));
+      .map(p=>{
+        const item = {
+          id:p.id,
+          quantity:Number(cart[p.id])
+        };
+
+        if(isFamilyCombo(p)){
+          const selections = getComboSelections(p.id);
+
+          item.skewerSelections = selections
+            .slice(0,item.quantity)
+            .map(selection=>
+              FAMILY_COMBO_OPTIONS.flatMap(name=>
+                Array(Number(selection[name] || 0)).fill(name)
+              )
+            );
+        }
+
+        return item;
+      });
 
     const amount = cartTotal();
 
@@ -1244,6 +1533,25 @@ function buildWhatsAppMessage(data){
         "• "+product.name+" × "+item.quantity+
         " — "+formatPrice(product.price*item.quantity)+" ₸"
       );
+
+      if(isFamilyCombo(product) && Array.isArray(item.skewerSelections)){
+        item.skewerSelections.forEach((selection,index)=>{
+          const counts = {};
+
+          selection.forEach(name=>{
+            counts[name] = (counts[name] || 0) + 1;
+          });
+
+          const composition = FAMILY_COMBO_OPTIONS
+            .filter(name=>counts[name])
+            .map(name=>name+" x"+counts[name])
+            .join(", ");
+
+          lines.push(
+            "  🍢 Состав комбо №"+(index+1)+": "+composition
+          );
+        });
+      }
     }
   });
 
@@ -1285,7 +1593,6 @@ function escapeJS(value){
     .replace(/'/g,"\\'");
 }
 
-/* Запускаем проверку при открытии сайта */
 startPublicSite();
 </script>
 
