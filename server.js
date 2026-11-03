@@ -154,6 +154,16 @@ const MENU_SEED = [
   ]]
 ];
 
+const FAMILY_COMBO_NAME = "семейный комбо";
+
+const ALLOWED_SKEWERS = [
+  "Шашлык люля",
+  "Рулет",
+  "Утка",
+  "Крылья",
+  "Окорочка"
+];
+
 function slug(value) {
   return String(value).toLowerCase()
     .replace(/[^a-zа-яё0-9]+/gi, "-")
@@ -454,6 +464,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       const items = Array.isArray(body.items) ? body.items : [];
+      let savedItems = [];
       let amount = Number(body.amount || 0);
       let itemText = String(body.item || "");
 
@@ -481,16 +492,77 @@ const server = http.createServer(async (req, res) => {
             });
           }
 
-          const qty = Math.max(
-            1,
-            Math.min(99, Number(item.quantity || 1))
-          );
+          const rawQty = Number(item.quantity || 1);
+
+          if (
+            !Number.isInteger(rawQty) ||
+            rawQty < 1 ||
+            rawQty > 99
+          ) {
+            return json(res, 400, {
+              error: "Некорректное количество блюда."
+            });
+          }
+
+          const qty = rawQty;
+
+          const savedItem = {
+            id: product.id,
+            quantity: qty
+          };
 
           amount += clean.price * qty;
 
-          orderLines.push(
-            `${product.name} x${qty} — ${clean.price * qty} ₸`
-          );
+          let line =
+            `${product.name} x${qty} — ${clean.price * qty} ₸`;
+
+          // СОСТАВ СЕМЕЙНОГО КОМБО
+          if (
+            String(product.name).trim().toLowerCase() ===
+            FAMILY_COMBO_NAME
+          ) {
+            if (
+              !Array.isArray(item.skewerSelections) ||
+              item.skewerSelections.length !== qty
+            ) {
+              return json(res, 400, {
+                error: "Укажите состав для каждого Семейного Комбо."
+              });
+            }
+
+            savedItem.skewerSelections = [];
+
+            for (let i = 0; i < qty; i++) {
+              const selection = item.skewerSelections[i];
+
+              if (
+                !Array.isArray(selection) ||
+                selection.length !== 4 ||
+                selection.some(name => !ALLOWED_SKEWERS.includes(name))
+              ) {
+                return json(res, 400, {
+                  error: `В Семейном Комбо №${i + 1} нужно выбрать ровно 4 шашлыка.`
+                });
+              }
+
+              savedItem.skewerSelections.push([...selection]);
+
+              const counts = {};
+
+              for (const name of selection) {
+                counts[name] = (counts[name] || 0) + 1;
+              }
+
+              const composition = Object.entries(counts)
+                .map(([name, count]) => `${name} x${count}`)
+                .join(", ");
+
+              line += `\n  Комбо №${i + 1}: ${composition}`;
+            }
+          }
+
+          savedItems.push(savedItem);
+          orderLines.push(line);
         }
 
         itemText = orderLines.join("\n");
@@ -513,7 +585,7 @@ const server = http.createServer(async (req, res) => {
         address: String(body.address),
         amount,
         item: itemText,
-        items,
+        items: savedItems,
         comment: String(body.comment || ""),
         inZone: null,
         zone: null,
